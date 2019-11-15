@@ -1,4 +1,3 @@
-// Package sqlyt provides functions to simplify sql query base on package database/sql
 package sqlyt
 
 import (
@@ -81,7 +80,7 @@ func execManyDb(ctx context.Context, db *sql.DB, queries []string) error {
 	return tx.Commit()
 }
 
-// query the database working with results
+// Query query the database working with results
 func (s *SqlY) Query(model interface{}, query string, args ...interface{}) (*[]interface{}, error) {
 	// query db
 	q, err := queryFormat(query, args...)
@@ -95,7 +94,7 @@ func (s *SqlY) Query(model interface{}, query string, args ...interface{}) (*[]i
 	return checkAll(rows, model)
 }
 
-// query the database working with one result
+// QueryOne query the database working with one result
 func (s *SqlY) QueryOne(model interface{}, query string, args ...interface{}) error {
 	// query db
 	q, err := queryFormat(query, args...)
@@ -109,7 +108,7 @@ func (s *SqlY) QueryOne(model interface{}, query string, args ...interface{}) er
 	return checkOne(rows, model)
 }
 
-// insert
+// Insert insert into the database
 func (s *SqlY) Insert(query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -118,7 +117,7 @@ func (s *SqlY) Insert(query string, args ...interface{}) (*Affected, error) {
 	return execOneDb(context.Background(), s.db, q)
 }
 
-// insert many
+// InsertMany insert many values to database
 func (s *SqlY) InsertMany(query string, args [][]interface{}) (*Affected, error) {
 	q, err := multiRowsFmt(query, args)
 	if err != nil {
@@ -127,7 +126,7 @@ func (s *SqlY) InsertMany(query string, args [][]interface{}) (*Affected, error)
 	return execOneDb(context.Background(), s.db, q)
 }
 
-// update
+// Update update value to database
 func (s *SqlY) Update(query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -136,7 +135,7 @@ func (s *SqlY) Update(query string, args ...interface{}) (*Affected, error) {
 	return execOneDb(context.Background(), s.db, q)
 }
 
-// delete
+// Delete delete item from database
 func (s *SqlY) Delete(query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -145,7 +144,7 @@ func (s *SqlY) Delete(query string, args ...interface{}) (*Affected, error) {
 	return execOneDb(context.Background(), s.db, q)
 }
 
-// general sql statement execute
+// Exec general sql statement execute
 func (s *SqlY) Exec(query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -154,12 +153,12 @@ func (s *SqlY) Exec(query string, args ...interface{}) (*Affected, error) {
 	return execOneDb(context.Background(), s.db, q)
 }
 
-// execute multi sql statement
+// ExecMany execute multi sql statement
 func (s *SqlY) ExecMany(queries []string) error {
 	return execManyDb(context.Background(), s.db, queries)
 }
 
-// query the database working with results
+// QueryCtx query the database working with results
 func (s *SqlY) QueryCtx(ctx context.Context, model interface{}, query string, args ...interface{}) (*[]interface{}, error) {
 	// query db
 	q, err := queryFormat(query, args...)
@@ -173,7 +172,7 @@ func (s *SqlY) QueryCtx(ctx context.Context, model interface{}, query string, ar
 	return checkAll(rows, model)
 }
 
-// query the database working with one result
+// QueryOneCtx query the database working with one result
 func (s *SqlY) QueryOneCtx(ctx context.Context, model interface{}, query string, args ...interface{}) error {
 	// query db
 	q, err := queryFormat(query, args...)
@@ -187,7 +186,7 @@ func (s *SqlY) QueryOneCtx(ctx context.Context, model interface{}, query string,
 	return checkOne(rows, model)
 }
 
-// insert
+// InsertCtx insert with context
 func (s *SqlY) InsertCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -196,7 +195,7 @@ func (s *SqlY) InsertCtx(ctx context.Context, query string, args ...interface{})
 	return execOneDb(ctx, s.db, q)
 }
 
-// insert many
+// InsertManyCtx insert many with context
 func (s *SqlY) InsertManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error) {
 	q, err := multiRowsFmt(query, args)
 	if err != nil {
@@ -205,7 +204,7 @@ func (s *SqlY) InsertManyCtx(ctx context.Context, query string, args [][]interfa
 	return execOneDb(ctx, s.db, q)
 }
 
-// update
+// UpdateCtx update with context
 func (s *SqlY) UpdateCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -214,7 +213,7 @@ func (s *SqlY) UpdateCtx(ctx context.Context, query string, args ...interface{})
 	return execOneDb(ctx, s.db, q)
 }
 
-// delete
+// DeleteCtx delete with context
 func (s *SqlY) DeleteCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -223,7 +222,7 @@ func (s *SqlY) DeleteCtx(ctx context.Context, query string, args ...interface{})
 	return execOneDb(ctx, s.db, q)
 }
 
-// general sql statement execute
+// ExecCtx general sql statement execute with context
 func (s *SqlY) ExecCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -232,15 +231,15 @@ func (s *SqlY) ExecCtx(ctx context.Context, query string, args ...interface{}) (
 	return execOneDb(ctx, s.db, q)
 }
 
-// execute multi sql statement
+// ExecManyCtx execute multi sql statement with context
 func (s *SqlY) ExecManyCtx(ctx context.Context, queries []string) error {
 	return execManyDb(ctx, s.db, queries)
 }
 
-// callback function definition
+// TxFunc callback function definition
 type TxFunc func(tx *Trans) (interface{}, error)
 
-// start transaction with callback function
+// Transaction start transaction with callback function
 func (s *SqlY) Transaction(txFunc TxFunc) (interface{}, error) {
 	tx, errI := s.db.Begin()
 	if errI != nil {

@@ -6,7 +6,7 @@ import (
 	"errors"
 )
 
-// sql struct for transaction
+// Trans sql struct for transaction
 type Trans struct {
 	tx *sql.Tx
 }
@@ -49,7 +49,7 @@ func execManyTx(ctx context.Context, tx *sql.Tx, queries []string) error {
 	return nil
 }
 
-// query results
+// Query query results
 func (t *Trans) Query(model interface{}, query string, args ...interface{}) (*[]interface{}, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -63,7 +63,7 @@ func (t *Trans) Query(model interface{}, query string, args ...interface{}) (*[]
 	return checkAll(rows, model)
 }
 
-// query one row
+// QueryOne query one row
 func (t *Trans) QueryOne(model interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -77,7 +77,7 @@ func (t *Trans) QueryOne(model interface{}, query string, args ...interface{}) e
 	return checkOne(rows, model)
 }
 
-// insert
+// Insert insert
 func (t *Trans) Insert(query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -86,7 +86,7 @@ func (t *Trans) Insert(query string, args ...interface{}) (*Affected, error) {
 	return execOneTx(context.Background(), t.tx, q)
 }
 
-// insert many rows
+// InsertMany insert many rows
 func (t *Trans) InsertMany(query string, args [][]interface{}) (*Affected, error) {
 	q, err := multiRowsFmt(query, args)
 	if err != nil {
@@ -95,7 +95,7 @@ func (t *Trans) InsertMany(query string, args [][]interface{}) (*Affected, error
 	return execOneTx(context.Background(), t.tx, q)
 }
 
-// update
+// Update update
 func (t *Trans) Update(query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -104,7 +104,7 @@ func (t *Trans) Update(query string, args ...interface{}) (*Affected, error) {
 	return execOneTx(context.Background(), t.tx, q)
 }
 
-// delete
+// Delete delete
 func (t *Trans) Delete(query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -113,7 +113,7 @@ func (t *Trans) Delete(query string, args ...interface{}) (*Affected, error) {
 	return execOneTx(context.Background(), t.tx, q)
 }
 
-// general sql statement execute
+// Exec general sql statement execute
 func (t *Trans) Exec(query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -122,12 +122,12 @@ func (t *Trans) Exec(query string, args ...interface{}) (*Affected, error) {
 	return execOneTx(context.Background(), t.tx, q)
 }
 
-// execute multi sql statement
+// ExecMany execute multi sql statement
 func (t *Trans) ExecMany(queries []string) error {
 	return execManyTx(context.Background(), t.tx, queries)
 }
 
-// query results
+// QueryCtx query results
 func (t *Trans) QueryCtx(ctx context.Context, model interface{}, query string, args ...interface{}) (*[]interface{}, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -141,7 +141,7 @@ func (t *Trans) QueryCtx(ctx context.Context, model interface{}, query string, a
 	return checkAll(rows, model)
 }
 
-// query one row
+// QueryOneCtx query one row
 func (t *Trans) QueryOneCtx(ctx context.Context, model interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -155,7 +155,7 @@ func (t *Trans) QueryOneCtx(ctx context.Context, model interface{}, query string
 	return checkOne(rows, model)
 }
 
-// insert
+// InsertCtx insert
 func (t *Trans) InsertCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -164,7 +164,7 @@ func (t *Trans) InsertCtx(ctx context.Context, query string, args ...interface{}
 	return execOneTx(ctx, t.tx, q)
 }
 
-// insert many rows
+// InsertManyCtx insert many rows
 func (t *Trans) InsertManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error) {
 	q, err := multiRowsFmt(query, args)
 	if err != nil {
@@ -173,7 +173,7 @@ func (t *Trans) InsertManyCtx(ctx context.Context, query string, args [][]interf
 	return execOneTx(ctx, t.tx, q)
 }
 
-// update
+// UpdateCtx update
 func (t *Trans) UpdateCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -182,7 +182,7 @@ func (t *Trans) UpdateCtx(ctx context.Context, query string, args ...interface{}
 	return execOneTx(ctx, t.tx, q)
 }
 
-// delete
+// DeleteCtx delete
 func (t *Trans) DeleteCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -191,7 +191,7 @@ func (t *Trans) DeleteCtx(ctx context.Context, query string, args ...interface{}
 	return execOneTx(ctx, t.tx, q)
 }
 
-// general sql statement execute
+// ExecCtx general sql statement execute
 func (t *Trans) ExecCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -200,7 +200,7 @@ func (t *Trans) ExecCtx(ctx context.Context, query string, args ...interface{}) 
 	return execOneTx(ctx, t.tx, q)
 }
 
-// execute multi sql statement
+// ExecManyCtx execute multi sql statement
 func (t *Trans) ExecManyCtx(ctx context.Context, queries []string) error {
 	return execManyTx(ctx, t.tx, queries)
 }

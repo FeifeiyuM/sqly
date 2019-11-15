@@ -157,7 +157,7 @@ func queryFormat(fmtStr string, args ...interface{}) (string, error) {
 	return query, nil
 }
 
-// sql statement assemble public
+// QueryFmt sql statement assemble public
 func QueryFmt(fmtStr string, args ...interface{}) (string, error) {
 	return queryFormat(fmtStr, args...)
 }

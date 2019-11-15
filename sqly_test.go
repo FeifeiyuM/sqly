@@ -66,7 +66,7 @@ func TestSqlY_Query(t *testing.T) {
 	res := map[string]interface{}{
 		"acc": acc,
 	}
-	accStr, err := json.Marshal(res)
+	accStr, _ := json.Marshal(res)
 	fmt.Printf("rows %s", accStr)
 	_ = fmt.Sprint(rows)
 }

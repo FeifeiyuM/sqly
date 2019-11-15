@@ -109,7 +109,9 @@ func checkOne(rows *sql.Rows, model interface{}) error {
 		if err := rows.Scan(scanDest...); err != nil {
 			return err
 		}
-		break
+		if rows.Next() {
+			break
+		}
 	}
 	// close rows
 	if err := closeRows(rows); err != nil {
@@ -148,6 +150,11 @@ type Affected struct {
 }
 
 // errors
+// ErrQueryFmt sql statement format error
 var ErrQueryFmt = errors.New("query can't be formatted")
+
+// ErrArgType
 var ErrArgType = errors.New("invalid variable type for argument")
+
+// ErrStatement
 var ErrStatement = errors.New("sql statement syntax error")
