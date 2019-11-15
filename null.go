@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 )
 
-// NullString is an alias for sql.NullTime
+// NullTime is an alias for sql.NullTime
 type NullTime sql.NullTime
 
 // Scan implements the Scanner interface for NullTime
@@ -14,7 +14,7 @@ func (ns *NullTime) Scan(val interface{}) error {
 	if err := t.Scan(val); err != nil {
 		return err
 	}
-	*ns = NullTime{t.Time, t.Valid}
+	*ns = NullTime{Time: t.Time, Valid: t.Valid}
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (ns *NullTime) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// NullString is an alias for sql.NullBool
+// NullBool is an alias for sql.NullBool
 type NullBool sql.NullBool
 
 // Scan implements the Scanner interface for NullBool
@@ -42,7 +42,7 @@ func (ns *NullBool) Scan(val interface{}) error {
 	if err := b.Scan(val); err != nil {
 		return err
 	}
-	*ns = NullBool{b.Bool, b.Valid}
+	*ns = NullBool{Bool: b.Bool, Valid: b.Valid}
 	return nil
 }
 
@@ -61,7 +61,7 @@ func (ns *NullBool) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// NullString is an alias for sql.NullFloat64
+// NullFloat64 is an alias for sql.NullFloat64
 type NullFloat64 sql.NullFloat64
 
 // Scan implements the Scanner interface for NullFloat64
@@ -70,7 +70,7 @@ func (ns *NullFloat64) Scan(val interface{}) error {
 	if err := f.Scan(val); err != nil {
 		return err
 	}
-	*ns = NullFloat64{f.Float64, f.Valid}
+	*ns = NullFloat64{Float64: f.Float64, Valid: f.Valid}
 	return nil
 }
 
@@ -89,7 +89,7 @@ func (ns *NullFloat64) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// NullString is an alias for sql.NullInt64
+// NullInt64 is an alias for sql.NullInt64
 type NullInt64 sql.NullInt64
 
 // Scan implements the Scanner interface for NullInt64
@@ -98,7 +98,7 @@ func (ns *NullInt64) Scan(val interface{}) error {
 	if err := i.Scan(val); err != nil {
 		return err
 	}
-	*ns = NullInt64{i.Int64, i.Valid}
+	*ns = NullInt64{Int64: i.Int64, Valid: i.Valid}
 	return nil
 }
 
@@ -117,7 +117,7 @@ func (ns *NullInt64) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// NullString is an alias for sql.NullInt32
+// NullInt32 is an alias for sql.NullInt32
 type NullInt32 sql.NullInt32
 
 // Scan implements the Scanner interface for NullInt32
@@ -126,7 +126,7 @@ func (ns *NullInt32) Scan(val interface{}) error {
 	if err := i.Scan(val); err != nil {
 		return err
 	}
-	*ns = NullInt32{i.Int32, i.Valid}
+	*ns = NullInt32{Int32: i.Int32, Valid: i.Valid}
 	return nil
 }
 
@@ -154,7 +154,7 @@ func (ns *NullString) Scan(val interface{}) error {
 	if err := s.Scan(val); err != nil {
 		return err
 	}
-	*ns = NullString{s.String, s.Valid}
+	*ns = NullString{String: s.String, Valid: s.Valid}
 	return nil
 }
 

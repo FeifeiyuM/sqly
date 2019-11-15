@@ -8,6 +8,24 @@ import (
 	"strings"
 )
 
+// Affected to record lastId for insert, and affected rows for update, inserts, delete statement
+type Affected struct {
+	LastId       int64
+	RowsAffected int64
+}
+
+// errors
+var (
+	// ErrQueryFmt sql statement format error
+	ErrQueryFmt = errors.New("query can't be formatted")
+
+	// ErrArgType sql statement format type error
+	ErrArgType = errors.New("invalid variable type for argument")
+
+	// ErrStatement sql syntax error
+	ErrStatement = errors.New("sql statement syntax error")
+)
+
 // connect to database
 func conn(driverName, dsn string) (*sql.DB, error) {
 	db, err := sql.Open(driverName, dsn)
@@ -141,20 +159,3 @@ func multiRowsFmt(query string, args [][]interface{}) (string, error) {
 	q += strings.Join(items, ",") + ";"
 	return q, nil
 }
-
-// Affected
-// to record lastId for insert, and affected rows for update, inserts, delete statement
-type Affected struct {
-	LastId       int64
-	RowsAffected int64
-}
-
-// errors
-// ErrQueryFmt sql statement format error
-var ErrQueryFmt = errors.New("query can't be formatted")
-
-// ErrArgType
-var ErrArgType = errors.New("invalid variable type for argument")
-
-// ErrStatement
-var ErrStatement = errors.New("sql statement syntax error")
