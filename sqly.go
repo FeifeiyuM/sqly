@@ -12,7 +12,7 @@ type SqlY struct {
 	db *sql.DB
 }
 
-// sqlyt config option
+// Option sqlyt config option
 type Option struct {
 	Dsn             string        `json:"dsn"`                // database server name
 	DriverName      string        `json:"driver_name"`        // database driver
@@ -21,7 +21,7 @@ type Option struct {
 	ConnMaxLifeTime time.Duration `json:"conn_max_life_time"` // maximum amount of time a connection may be reused
 }
 
-// init SqlY to database
+// New init SqlY to database
 func New(opt *Option) (*SqlY, error) {
 	db, err := conn(opt.DriverName, opt.Dsn)
 	if err != nil {
