@@ -7,16 +7,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Shutdown Ubuntu MySQL (SUDO)
-      run: sudo service mysql stop
-    
-    - name: Set up mysql
-      uses: mirromutth/mysql-action@v1.1
-      with:
-        mysql database: 'test_db' # Optional, default value is "test". The specified database which will be create
-        mysql root password: 'mysql123' # Required if "mysql user" is empty, default is empty. The root superuser password
-        mysql user: 'test' # Required if "mysql root password" is empty, default is empty. The superuser for the specified database. Can use secrets, too
-        mysql password: 'mysql123' # Required if "mysql user" exists. The password for the "mysql user"
+#    - name: Shutdown Ubuntu MySQL (SUDO)
+#      run: sudo service mysql stop
+#
+#    - name: Set up mysql
+#      uses: mirromutth/mysql-action@v1.1
+#      with:
+#        mysql database: 'test_db' # Optional, default value is "test". The specified database which will be create
+#        mysql root password: 'mysql123' # Required if "mysql user" is empty, default is empty. The root superuser password
+#        mysql user: 'test' # Required if "mysql root password" is empty, default is empty. The superuser for the specified database. Can use secrets, too
+#        mysql password: 'mysql123' # Required if "mysql user" exists. The password for the "mysql user"
+    - name: Create Database
+      run: mysql -h127.0.0.1 -u root -proot -e "create database test_db"
 
     - name: Set up Go 1.13
       uses: actions/setup-go@v1
