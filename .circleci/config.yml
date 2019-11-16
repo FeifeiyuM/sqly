@@ -31,11 +31,11 @@ jobs:
             sleep 1
           done
           echo Failed waiting for MySQL && exit 1
-      - run:
-        name: Install MySQL CLI; create database
-        command: |
-          sudo apt-get install default-mysql-client
-          mysql -h 127.0.0.1 -u test -pmysql123 --execute="CREATE DATABASE `test_db`;"
+#      - run:
+#        name: Install MySQL CLI; create database
+#        command: |
+#          sudo apt-get install default-mysql-client
+#          mysql -h 127.0.0.1 -u test -pmysql123 --execute="CREATE DATABASE `test_db`;"
 
       # specify any bash command here prefixed with `run: `
 #      - run: go get -v -t -d ./...
