@@ -8,10 +8,11 @@ jobs:
       # specify the version
       - image: circleci/golang:1.9
       - image: circleci/mysql:8.0.3
-        MYSQL_ROOT_PASSWORD: mysql123
-        MYSQL_DATABASE: test_db
-        MYSQL_USER: test
-        MYSQL_PASSWORD: mysql123
+        environment:
+          MYSQL_ROOT_PASSWORD: mysql123
+          MYSQL_DATABASE: test_db
+          MYSQL_USER: test
+          MYSQL_PASSWORD: mysql123
 
     #### TEMPLATE_NOTE: go expects specific checkout path representing url
     #### expecting it in the form of
