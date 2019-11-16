@@ -21,7 +21,6 @@ jobs:
     working_directory: ~/sqly
     steps:
       - checkout
-      - run: go get -v -t -d ./...
       # mysql prepare
       - run:
         name: Waiting for MySQL to be ready
@@ -36,4 +35,5 @@ jobs:
 #          echo Failed waiting for MySQL && exit 1
 
       # go run test
+      - run: go get -v -t -d ./...
       - run: go test -race
