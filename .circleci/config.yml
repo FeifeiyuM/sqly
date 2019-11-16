@@ -22,9 +22,9 @@ jobs:
     steps:
       - checkout
       # mysql prepare
-      - run:
-        name: Waiting for MySQL to be ready
-        command: dockerize -wait tcp://localhost:3306 -timeout 1m
+      - run: dockerize -wait tcp://localhost:3306 -timeout 1m
+#        name: Waiting for MySQL to be ready
+#        command: dockerize -wait tcp://localhost:3306 -timeout 1m
 #        command: |
 #          for i in `seq 1 10`;
 #          do
