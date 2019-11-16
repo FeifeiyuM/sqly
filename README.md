@@ -2,7 +2,7 @@
 
 sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 
-[![Build Status](https://github.com/FeifeiyuM/sqly/workflows/workflow%3AGo/badge.svg)](https://github.com/FeifeiyuM/sqly/actions?query=workflow%3AGo)
+[![Build Status](https://action-badges.now.sh/FeifeiyuM/sqly)](https://github.com/FeifeiyuM/sqly/actions?query=workflow%3AGo)
 [![Go Report](https://goreportcard.com/badge/github.com/FeifeiyuM/sqly)](https://goreportcard.com/report/github.com/FeifeiyuM/sqly)
 [![Coverage Status](https://coveralls.io/repos/github/FeifeiyuM/sqly/badge.svg?branch=master)](https://coveralls.io/github/FeifeiyuM/sqly?branch=master)
 
