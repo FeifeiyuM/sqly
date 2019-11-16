@@ -21,6 +21,7 @@ jobs:
     working_directory: ~/sqly
     steps:
       - checkout
+      - run: go get -v -t -d ./...
       # mysql prepare
       - run:
         name: Waiting for MySQL to be ready
@@ -39,5 +40,4 @@ jobs:
 #          mysql -h 127.0.0.1 -u test -pmysql123 --execute="CREATE DATABASE `test_db`;"
 
       # specify any bash command here prefixed with `run: `
-      - run: go get -v -t -d ./...
       - run: go test
