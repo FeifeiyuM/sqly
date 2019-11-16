@@ -10,7 +10,7 @@ jobs:
       - image: circleci/mysql:8.0.3
         MYSQL_ROOT_PASSWORD: mysql123
         MYSQL_DATABASE: test_db
-        MYSQL_USER: root
+        MYSQL_USER: test
         MYSQL_PASSWORD: mysql123
 
     #### TEMPLATE_NOTE: go expects specific checkout path representing url
@@ -35,7 +35,7 @@ jobs:
         name: Install MySQL CLI; create database
         command: |
           sudo apt-get install default-mysql-client
-          mysql -h 127.0.0.1 -u root -pmysql123 --execute="CREATE DATABASE `test_db`;"
+          mysql -h 127.0.0.1 -u test -pmysql123 --execute="CREATE DATABASE `test_db`;"
 
       # specify any bash command here prefixed with `run: `
 #      - run: go get -v -t -d ./...
