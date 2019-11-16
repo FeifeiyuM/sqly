@@ -35,4 +35,4 @@ jobs:
 #          echo Failed waiting for MySQL && exit 1
 
       # go run test
-      - run: go test
+      - run: go test -race
