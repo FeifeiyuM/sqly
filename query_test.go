@@ -1,4 +1,4 @@
-package sqlyt
+package sqly
 
 import "testing"
 

@@ -1,4 +1,4 @@
-package sqlyt
+package sqly
 
 import (
 	"context"
@@ -12,7 +12,7 @@ type SqlY struct {
 	db *sql.DB
 }
 
-// Option sqlyt config option
+// Option sqly config option
 type Option struct {
 	Dsn             string        `json:"dsn"`                // database server name
 	DriverName      string        `json:"driver_name"`        // database driver
