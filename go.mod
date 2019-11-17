@@ -1,4 +1,4 @@
-module github.com/feifeiyuM/sqly
+module github.com/FeifeiyuM/sqly
 
 go 1.13
 
