@@ -81,15 +81,15 @@ func execManyDb(ctx context.Context, db *sql.DB, queries []string) error {
 }
 
 // Query query the database working with results
-func (s *SqlY) Query(model interface{}, query string, args ...interface{}) (*[]interface{}, error) {
+func (s *SqlY) Query(model interface{}, query string, args ...interface{}) error {
 	// query db
 	q, err := queryFormat(query, args...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	rows, err := s.db.Query(q)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	return checkAll(rows, model)
 }
@@ -169,7 +169,7 @@ func (s *SqlY) QueryCtx(ctx context.Context, model interface{}, query string, ar
 	if err != nil {
 		return nil, err
 	}
-	return checkAll(rows, model)
+	return nil, checkAll(rows, model)
 }
 
 // QueryOneCtx query the database working with one result

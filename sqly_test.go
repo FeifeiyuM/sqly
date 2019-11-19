@@ -11,7 +11,7 @@ import (
 )
 
 var opt = &Option{
-	Dsn:             "root:root@tcp(127.0.0.1:3306)/test_db?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Local",
+	Dsn:             "test:mysql123@tcp(127.0.0.1:3306)/test_db?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Local",
 	DriverName:      "mysql",
 	MaxIdleConns:    0,
 	MaxOpenConns:    0,
@@ -25,7 +25,7 @@ type Account struct {
 	Avatar     NullString `sql:"avatar" json:"avatar"`
 	Email      string     `sql:"email" json:"email"`
 	Mobile     string     `sql:"mobile" json:"mobile"`
-	Role       int8       `sql:"role" json:"role"`
+	Role       NullInt32  `sql:"role" json:"role"`
 	Password   string     `sql:"password" json:"password"`
 	CreateTime time.Time  `sql:"create_time" json:"create_time"`
 }
@@ -87,19 +87,15 @@ func TestSqlY_Query(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	acc := new(Account)
-	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` FROM `account` " +
-		"WHERE `avatar`='';"
-	rows, err := db.Query(acc, query, nil)
+	accs := []Account{}
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` FROM `account`;"
+
+	err = db.Query(&accs, query, nil)
 	if err != nil {
 		t.Error(err)
 	}
-	res := map[string]interface{}{
-		"acc": acc,
-	}
-	accStr, _ := json.Marshal(res)
+	accStr, _ := json.Marshal(accs)
 	fmt.Printf("rows %s", accStr)
-	_ = fmt.Sprint(rows)
 }
 
 func TestSqlY_Insert(t *testing.T) {

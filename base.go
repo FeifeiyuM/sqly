@@ -24,6 +24,9 @@ var (
 
 	// ErrStatement sql syntax error
 	ErrStatement = errors.New("sql statement syntax error")
+
+	// ErrContainer ErrInvalid container for results
+	ErrContainer = errors.New("invalid container for results")
 )
 
 // connect to database
@@ -69,37 +72,37 @@ func reflectModel(cols []string, mVal reflect.Value, mType reflect.Type) []inter
 }
 
 // query the database working with results
-func checkAll(rows *sql.Rows, model interface{}) (*[]interface{}, error) {
+func checkAll(rows *sql.Rows, model interface{}) error {
 	modelType := reflect.TypeOf(model)
-	if modelType.Kind() != reflect.Ptr || modelType.Elem().Kind() != reflect.Struct {
-		return nil, errors.New("invalid receive model")
+	if modelType.Kind() != reflect.Ptr || modelType.Elem().Kind() != reflect.Slice {
+		return ErrContainer
 	}
+	modelVal := reflect.Indirect(reflect.ValueOf(model))
+	modelType = modelVal.Type()
 
 	cols, errC := rows.Columns()
 	if errC != nil {
-		return nil, errC
+		return errC
 	}
-	// result list
-	var results []interface{}
 	// iterate over the rows
 	for rows.Next() {
 		if err := rows.Err(); err != nil {
-			return nil, err
+			return err
 		}
 		mType := modelType.Elem()
 		mVal := reflect.New(mType).Elem()
 		scanDest := reflectModel(cols, mVal, mType)
 		// fanout results
 		if err := rows.Scan(scanDest...); err != nil {
-			return nil, err
+			return err
 		}
-		results = append(results, mVal.Interface())
+		modelVal.Set(reflect.Append(modelVal, mVal))
 	}
 	// close rows
 	if err := closeRows(rows); err != nil {
-		return nil, err
+		return err
 	}
-	return &results, nil
+	return nil
 }
 
 // query the database working with one result

@@ -60,7 +60,7 @@ func (t *Trans) Query(model interface{}, query string, args ...interface{}) (*[]
 	if err != nil {
 		return nil, err
 	}
-	return checkAll(rows, model)
+	return nil, checkAll(rows, model)
 }
 
 // QueryOne query one row
@@ -138,7 +138,7 @@ func (t *Trans) QueryCtx(ctx context.Context, model interface{}, query string, a
 	if err != nil {
 		return nil, err
 	}
-	return checkAll(rows, model)
+	return nil, checkAll(rows, model)
 }
 
 // QueryOneCtx query one row
