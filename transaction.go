@@ -50,21 +50,21 @@ func execManyTx(ctx context.Context, tx *sql.Tx, queries []string) error {
 }
 
 // Query query results
-func (t *Trans) Query(model interface{}, query string, args ...interface{}) (*[]interface{}, error) {
+func (t *Trans) Query(dest interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// query db
 	rows, err := t.tx.Query(q)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return nil, checkAllV2(rows, model)
+	return checkAllV2(rows, dest)
 }
 
 // Get query one row
-func (t *Trans) Get(model interface{}, query string, args ...interface{}) error {
+func (t *Trans) Get(dest interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func (t *Trans) Get(model interface{}, query string, args ...interface{}) error 
 	if err != nil {
 		return err
 	}
-	return checkOneV2(rows, model)
+	return checkOneV2(rows, dest)
 }
 
 // Insert insert
@@ -128,21 +128,21 @@ func (t *Trans) ExecMany(queries []string) error {
 }
 
 // QueryCtx query results
-func (t *Trans) QueryCtx(ctx context.Context, model interface{}, query string, args ...interface{}) (*[]interface{}, error) {
+func (t *Trans) QueryCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// query db
 	rows, err := t.tx.QueryContext(ctx, q)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return nil, checkAllV2(rows, model)
+	return checkAllV2(rows, dest)
 }
 
 // GetCtx query one row
-func (t *Trans) GetCtx(ctx context.Context, model interface{}, query string, args ...interface{}) error {
+func (t *Trans) GetCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func (t *Trans) GetCtx(ctx context.Context, model interface{}, query string, arg
 	if err != nil {
 		return err
 	}
-	return checkOneV2(rows, model)
+	return checkOneV2(rows, dest)
 }
 
 // InsertCtx insert

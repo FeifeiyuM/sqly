@@ -184,11 +184,11 @@ func TestSqlY_QueryCtx(t *testing.T) {
 		"FROM `account` WHERE `avatar` IS ?;"
 	ctx := context.TODO()
 	var acc []Account
-	res, err := db.QueryCtx(ctx, &acc, query, nil)
+	err = db.QueryCtx(ctx, &acc, query, nil)
 	if err != nil {
 		t.Error(err)
 	}
-	resStr, _ := json.Marshal(res)
+	resStr, _ := json.Marshal(acc)
 	fmt.Println(resStr)
 }
 

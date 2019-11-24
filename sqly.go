@@ -99,7 +99,7 @@ func execManyDb(ctx context.Context, db *sql.DB, queries []string) error {
 }
 
 // Query query the database working with results
-func (s *SqlY) Query(model interface{}, query string, args ...interface{}) error {
+func (s *SqlY) Query(dest interface{}, query string, args ...interface{}) error {
 	// query db
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -109,11 +109,11 @@ func (s *SqlY) Query(model interface{}, query string, args ...interface{}) error
 	if err != nil {
 		return err
 	}
-	return checkAllV2(rows, model)
+	return checkAllV2(rows, dest)
 }
 
 // Get query the database working with one result
-func (s *SqlY) Get(model interface{}, query string, args ...interface{}) error {
+func (s *SqlY) Get(dest interface{}, query string, args ...interface{}) error {
 	// query db
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -123,7 +123,7 @@ func (s *SqlY) Get(model interface{}, query string, args ...interface{}) error {
 	if err != nil {
 		return err
 	}
-	return checkOneV2(rows, model)
+	return checkOneV2(rows, dest)
 }
 
 // Insert insert into the database
@@ -177,21 +177,21 @@ func (s *SqlY) ExecMany(queries []string) error {
 }
 
 // QueryCtx query the database working with results
-func (s *SqlY) QueryCtx(ctx context.Context, model interface{}, query string, args ...interface{}) (*[]interface{}, error) {
+func (s *SqlY) QueryCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
 	// query db
 	q, err := queryFormat(query, args...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	rows, err := s.db.QueryContext(ctx, q)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return nil, checkAllV2(rows, model)
+	return checkAllV2(rows, dest)
 }
 
 // GetCtx query the database working with one result
-func (s *SqlY) GetCtx(ctx context.Context, model interface{}, query string, args ...interface{}) error {
+func (s *SqlY) GetCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
 	// query db
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -201,7 +201,7 @@ func (s *SqlY) GetCtx(ctx context.Context, model interface{}, query string, args
 	if err != nil {
 		return err
 	}
-	return checkOneV2(rows, model)
+	return checkOneV2(rows, dest)
 }
 
 // InsertCtx insert with context
