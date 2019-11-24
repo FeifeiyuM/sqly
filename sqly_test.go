@@ -11,7 +11,7 @@ import (
 )
 
 var opt = &Option{
-	Dsn:             "test:mysql123@tcp(127.0.0.1:3306)/test_db?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Local",
+	Dsn:             "root:root@tcp(127.0.0.1:3306)/test_db?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Local",
 	DriverName:      "mysql",
 	MaxIdleConns:    0,
 	MaxOpenConns:    0,
@@ -20,14 +20,16 @@ var opt = &Option{
 
 // user model
 type Account struct {
-	ID         int64      `sql:"id" json:"id"`
-	Nickname   string     `sql:"nickname" json:"nickname"`
-	Avatar     NullString `sql:"avatar" json:"avatar"`
-	Email      string     `sql:"email" json:"email"`
-	Mobile     string     `sql:"mobile" json:"mobile"`
-	Role       NullInt32  `sql:"role" json:"role"`
-	Password   string     `sql:"password" json:"password"`
-	CreateTime time.Time  `sql:"create_time" json:"create_time"`
+	ID         int64       `sql:"id" json:"id"`
+	Nickname   string      `sql:"nickname" json:"nickname"`
+	Avatar     NullString  `sql:"avatar" json:"avatar"`
+	Email      string      `sql:"email" json:"email"`
+	Mobile     string      `sql:"mobile" json:"mobile"`
+	Role       NullInt32   `sql:"role" json:"role"`
+	Password   string      `sql:"password" json:"password"`
+	IsValid    NullBool    `sql:"is_valid" json:"is_valid"`
+	Stature    NullFloat64 `sql:"stature" json:"stature"`
+	CreateTime time.Time   `sql:"create_time" json:"create_time"`
 }
 
 func TestNew(t *testing.T) {
@@ -56,6 +58,8 @@ func TestSqlY_Exec(t *testing.T) {
 		"`email` varchar(320) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'email'," +
 		"`password` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'password'," +
 		"`role` tinyint(4) DEFAULT '0' COMMENT 'role'," +
+		"`is_valid` tinyint(4) DEFAULT NULL COMMENT 'is_valid'," +
+		"`stature` float(5,2) DEFAULT NULL COMMENT 'stature'," +
 		"`create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP," +
 		"PRIMARY KEY (`id`)," +
 		"UNIQUE KEY `mobile_index` (`mobile`)," +
@@ -65,37 +69,6 @@ func TestSqlY_Exec(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-}
-
-func TestSqlY_QueryOne(t *testing.T) {
-	db, err := New(opt)
-	if err != nil {
-		t.Error(err)
-	}
-
-	acc := new(Account)
-	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` FROM `account` " +
-		"WHERE `id`=?;"
-	err = db.QueryOne(acc, query, 6)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestSqlY_Query(t *testing.T) {
-	db, err := New(opt)
-	if err != nil {
-		t.Error(err)
-	}
-	accs := []Account{}
-	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` FROM `account`;"
-
-	err = db.Query(&accs, query, nil)
-	if err != nil {
-		t.Error(err)
-	}
-	accStr, _ := json.Marshal(accs)
-	fmt.Printf("rows %s", accStr)
 }
 
 func TestSqlY_Insert(t *testing.T) {
@@ -125,19 +98,6 @@ func TestSqlY_Update(t *testing.T) {
 	fmt.Println(aff)
 }
 
-func TestSqlY_Delete(t *testing.T) {
-	db, err := New(opt)
-	if err != nil {
-		t.Error(err)
-	}
-	query := "DELETE FROM `account` WHERE `mobile`=?;"
-	aff, err := db.Delete(query, "18812311231")
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Println(aff)
-}
-
 func TestSqlY_InsertCtx(t *testing.T) {
 	db, err := New(opt)
 	if err != nil {
@@ -151,45 +111,6 @@ func TestSqlY_InsertCtx(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Println(aff)
-}
-
-func TestSqlY_QueryCtx(t *testing.T) {
-	db, err := New(opt)
-	if err != nil {
-		t.Error(err)
-	}
-	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` " +
-		"FROM `account` WHERE `avatar` IS ?;"
-	ctx := context.TODO()
-	acc := new(Account)
-	res, err := db.QueryCtx(ctx, acc, query, nil)
-	if err != nil {
-		t.Error(err)
-	}
-	resStr, _ := json.Marshal(res)
-	fmt.Println(resStr)
-}
-
-func TestSqlY_QueryOneCtx(t *testing.T) {
-	db, err := New(opt)
-	if err != nil {
-		t.Error(err)
-	}
-	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time` " +
-		"FROM `account` WHERE `mobile`=?;"
-	ctx := context.TODO()
-	acc := new(Account)
-	err = db.QueryOneCtx(ctx, acc, query, "18756788776")
-	if err != nil {
-		t.Error(err)
-	}
-	resStr, _ := json.Marshal(acc)
-	fmt.Println(resStr)
-	acc2 := new(Account)
-	err = json.Unmarshal(resStr, acc2)
-	if err != nil {
-		t.Error(err)
-	}
 }
 
 func TestSqlY_InsertMany(t *testing.T) {
@@ -208,6 +129,119 @@ func TestSqlY_InsertMany(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Sprintln(aff)
+}
+
+func TestSqlY_QueryOne(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+
+	acc := new(Account)
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` FROM `account` " +
+		"WHERE `id`=?;"
+	err = db.Get(acc, query, 1)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestSqlY_Query(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	var accs []*Account
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time` FROM `account`;"
+
+	err = db.Query(&accs, query, nil)
+	if err != nil {
+		t.Error(err)
+	}
+	accStr, _ := json.Marshal(accs)
+	fmt.Printf("rows %s", accStr)
+}
+
+func TestSqlY_Delete(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	query := "DELETE FROM `account` WHERE `mobile`=?;"
+	aff, err := db.Delete(query, "18812311231")
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(aff)
+}
+
+func TestSqlY_QueryCtx(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` " +
+		"FROM `account` WHERE `avatar` IS ?;"
+	ctx := context.TODO()
+	var acc []Account
+	res, err := db.QueryCtx(ctx, &acc, query, nil)
+	if err != nil {
+		t.Error(err)
+	}
+	resStr, _ := json.Marshal(res)
+	fmt.Println(resStr)
+}
+
+func TestSqlY_GetCtx(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time` " +
+		"FROM `account` WHERE `mobile`=?;"
+	ctx := context.TODO()
+	acc := new(Account)
+	err = db.GetCtx(ctx, acc, query, "18812311232")
+	if err != nil {
+		t.Error(err)
+	}
+	resStr, _ := json.Marshal(acc)
+	fmt.Println(string(resStr))
+	acc2 := new(Account)
+	err = json.Unmarshal(resStr, acc2)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestSqlY_GetCtx_Empty(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time` " +
+		"FROM `account` WHERE `mobile`=?;"
+	ctx := context.TODO()
+	acc := new(Account)
+	err = db.GetCtx(ctx, acc, query, "18812311239")
+	if err != ErrEmpty {
+		t.Error("expect error empty")
+	}
+}
+
+func TestSqlY_GetCtx_Multi(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time` " +
+		"FROM `account`;"
+	ctx := context.TODO()
+	acc := new(Account)
+	err = db.GetCtx(ctx, acc, query)
+	if err != ErrMultiRes {
+		t.Error("expect multi results error")
+	}
 }
 
 func TestSqlY_ExecManyCtx(t *testing.T) {

@@ -16,7 +16,7 @@ func TestSqlY_Transaction(t *testing.T) {
 		acc := new(Account)
 		query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` " +
 			"FROM `account` WHERE `mobile`=?;"
-		err := tx.QueryOneCtx(ctx, acc, query, "18812311232")
+		err := tx.GetCtx(ctx, acc, query, "18812311232")
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +43,7 @@ func TestSqlY_Transaction2(t *testing.T) {
 		acc := new(Account)
 		query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` " +
 			"FROM `account` WHERE `mobile`=?;"
-		err := tx.QueryOneCtx(ctx, acc, query, "18787655678")
+		err := tx.GetCtx(ctx, acc, query, "18812311232")
 		if err != nil {
 			return nil, err
 		}

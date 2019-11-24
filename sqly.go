@@ -21,6 +21,18 @@ type Option struct {
 	ConnMaxLifeTime time.Duration `json:"conn_max_life_time"` // maximum amount of time a connection may be reused
 }
 
+// connect to database
+func conn(driverName, dsn string) (*sql.DB, error) {
+	db, err := sql.Open(driverName, dsn)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
 // New init SqlY to database
 func New(opt *Option) (*SqlY, error) {
 	db, err := conn(opt.DriverName, opt.Dsn)
@@ -31,6 +43,12 @@ func New(opt *Option) (*SqlY, error) {
 	db.SetMaxIdleConns(opt.MaxIdleConns)
 	db.SetMaxOpenConns(opt.MaxOpenConns)
 	return &SqlY{db: db}, nil
+}
+
+// Affected to record lastId for insert, and affected rows for update, inserts, delete statement
+type Affected struct {
+	LastId       int64
+	RowsAffected int64
 }
 
 // exec one sql statement with context
@@ -91,11 +109,11 @@ func (s *SqlY) Query(model interface{}, query string, args ...interface{}) error
 	if err != nil {
 		return err
 	}
-	return checkAll(rows, model)
+	return checkAllV2(rows, model)
 }
 
-// QueryOne query the database working with one result
-func (s *SqlY) QueryOne(model interface{}, query string, args ...interface{}) error {
+// Get query the database working with one result
+func (s *SqlY) Get(model interface{}, query string, args ...interface{}) error {
 	// query db
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -105,7 +123,7 @@ func (s *SqlY) QueryOne(model interface{}, query string, args ...interface{}) er
 	if err != nil {
 		return err
 	}
-	return checkOne(rows, model)
+	return checkOneV2(rows, model)
 }
 
 // Insert insert into the database
@@ -169,11 +187,11 @@ func (s *SqlY) QueryCtx(ctx context.Context, model interface{}, query string, ar
 	if err != nil {
 		return nil, err
 	}
-	return nil, checkAll(rows, model)
+	return nil, checkAllV2(rows, model)
 }
 
-// QueryOneCtx query the database working with one result
-func (s *SqlY) QueryOneCtx(ctx context.Context, model interface{}, query string, args ...interface{}) error {
+// GetCtx query the database working with one result
+func (s *SqlY) GetCtx(ctx context.Context, model interface{}, query string, args ...interface{}) error {
 	// query db
 	q, err := queryFormat(query, args...)
 	if err != nil {
@@ -183,7 +201,7 @@ func (s *SqlY) QueryOneCtx(ctx context.Context, model interface{}, query string,
 	if err != nil {
 		return err
 	}
-	return checkOne(rows, model)
+	return checkOneV2(rows, model)
 }
 
 // InsertCtx insert with context

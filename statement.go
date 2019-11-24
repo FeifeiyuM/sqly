@@ -3,6 +3,7 @@ package sqly
 import (
 	"bytes"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -160,4 +161,26 @@ func queryFormat(fmtStr string, args ...interface{}) (string, error) {
 // QueryFmt sql statement assemble public
 func QueryFmt(fmtStr string, args ...interface{}) (string, error) {
 	return queryFormat(fmtStr, args...)
+}
+
+// format rows that insert into a table
+func multiRowsFmt(query string, args [][]interface{}) (string, error) {
+	pat := `(\((\?,\s*)+\?*\s*\))`
+	r, _ := regexp.Compile(pat)
+	c := r.FindString(query)
+	if c == "" {
+		return "", ErrStatement
+	}
+	q := strings.Split(query, c)[0]
+
+	var items []string
+	for _, arg := range args {
+		i, err := queryFormat(c, arg...)
+		if err != nil {
+			return "", err
+		}
+		items = append(items, i)
+	}
+	q += strings.Join(items, ",") + ";"
+	return q, nil
 }

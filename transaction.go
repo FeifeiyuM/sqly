@@ -60,11 +60,11 @@ func (t *Trans) Query(model interface{}, query string, args ...interface{}) (*[]
 	if err != nil {
 		return nil, err
 	}
-	return nil, checkAll(rows, model)
+	return nil, checkAllV2(rows, model)
 }
 
-// QueryOne query one row
-func (t *Trans) QueryOne(model interface{}, query string, args ...interface{}) error {
+// Get query one row
+func (t *Trans) Get(model interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func (t *Trans) QueryOne(model interface{}, query string, args ...interface{}) e
 	if err != nil {
 		return err
 	}
-	return checkOne(rows, model)
+	return checkOneV2(rows, model)
 }
 
 // Insert insert
@@ -138,11 +138,11 @@ func (t *Trans) QueryCtx(ctx context.Context, model interface{}, query string, a
 	if err != nil {
 		return nil, err
 	}
-	return nil, checkAll(rows, model)
+	return nil, checkAllV2(rows, model)
 }
 
-// QueryOneCtx query one row
-func (t *Trans) QueryOneCtx(ctx context.Context, model interface{}, query string, args ...interface{}) error {
+// GetCtx query one row
+func (t *Trans) GetCtx(ctx context.Context, model interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func (t *Trans) QueryOneCtx(ctx context.Context, model interface{}, query string
 	if err != nil {
 		return err
 	}
-	return checkOne(rows, model)
+	return checkOneV2(rows, model)
 }
 
 // InsertCtx insert
