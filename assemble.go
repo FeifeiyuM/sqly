@@ -125,7 +125,7 @@ func baseType(t reflect.Type, expected reflect.Kind) (reflect.Type, error) {
 }
 
 // fieldsMap
-func fieldsColsMap(cols []string, mType reflect.Type) []int {
+func fieldsColsMap(cols []string, mType reflect.Type) ([]int, error) {
 	kvMap := make(map[string]int)
 	for i := 0; i < mType.NumField(); i++ {
 		tf := mType.Field(i)
@@ -138,9 +138,13 @@ func fieldsColsMap(cols []string, mType reflect.Type) []int {
 	// span fields to list, to receive query values
 	var fc []int
 	for _, col := range cols {
-		fc = append(fc, kvMap[col])
+		t, ok := kvMap[col]
+		if !ok {
+			return nil, fmt.Errorf("field %s not exist", col)
+		}
+		fc = append(fc, t)
 	}
-	return fc
+	return fc, nil
 }
 
 // fill values
@@ -198,11 +202,11 @@ func checkAllV2(rows *sql.Rows, dest interface{}) error {
 	if err != nil {
 		return err
 	}
-	// map column's name and container item fields
-	fields := fieldsColsMap(cols, base)
 
-	if len(cols) != len(fields) {
-		return ErrFieldsMatch
+	// map column's name and container item fields
+	fields, err := fieldsColsMap(cols, base)
+	if err != nil {
+		return nil
 	}
 
 	// for store scan items
@@ -247,19 +251,24 @@ func checkOneV2(rows *sql.Rows, dest interface{}) error {
 	// construct container(dest) instance
 	dVal := reflect.Indirect(val)
 
+	// get container type instance
+	dType, err := baseType(val.Type(), reflect.Struct)
+	if err != nil {
+		return err
+	}
+
 	// get columns name
 	cols, err := rows.Columns()
 	if err != nil {
 		return err
 	}
 
-	// get container type instance
-	dType, err := baseType(val.Type(), reflect.Struct)
+	// fields map
+	fields, err := fieldsColsMap(cols, dType)
 	if err != nil {
 		return err
 	}
-	// fields map
-	fields := fieldsColsMap(cols, dType)
+
 	con := make([]interface{}, len(cols))
 	err = fieldAddrToContainer(dVal, fields, con)
 	if err != nil {

@@ -98,6 +98,11 @@ func execManyDb(ctx context.Context, db *sql.DB, queries []string) error {
 	return tx.Commit()
 }
 
+// Ping ping test
+func (s *SqlY) Ping() error {
+	return s.db.Ping()
+}
+
 // Query query the database working with results
 func (s *SqlY) Query(dest interface{}, query string, args ...interface{}) error {
 	// query db
@@ -259,9 +264,9 @@ type TxFunc func(tx *Trans) (interface{}, error)
 
 // Transaction start transaction with callback function
 func (s *SqlY) Transaction(txFunc TxFunc) (interface{}, error) {
-	tx, errI := s.db.Begin()
-	if errI != nil {
-		return nil, errI
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
 	}
 	// close or rollback transaction
 	defer func() {
@@ -278,4 +283,13 @@ func (s *SqlY) Transaction(txFunc TxFunc) (interface{}, error) {
 		return nil, errC
 	}
 	return result, nil
+}
+
+// NewTrans start transaction
+func (s *SqlY) NewTrans() (*Trans, error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	return &Trans{tx: tx}, nil
 }
