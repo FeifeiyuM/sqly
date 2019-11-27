@@ -11,7 +11,7 @@ import (
 )
 
 var opt = &Option{
-	Dsn:             "root:root@tcp(127.0.0.1:3306)/test_db?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Local",
+	Dsn:             "test:mysql123@tcp(127.0.0.1:3306)/test_db?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Local",
 	DriverName:      "mysql",
 	MaxIdleConns:    0,
 	MaxOpenConns:    0,
@@ -258,5 +258,46 @@ func TestSqlY_ExecManyCtx(t *testing.T) {
 	err = db.ExecManyCtx(ctx, queries)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestSqlY_NewTrans(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	ts, err := db.NewTrans()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	defer func() {
+		_ = ts.Rollback()
+	}()
+
+	ctx := context.TODO()
+
+	acc := new(Account)
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time` " +
+		"FROM `account` WHERE `mobile`=?;"
+	err = ts.GetCtx(ctx, acc, query, "18812311235")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	query = "UPDATE `account` SET `nickname`=? WHERE `id`=?;"
+	aff, err := ts.UpdateCtx(ctx, query, "trans_nick", acc.ID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Println(aff)
+
+	err = ts.Commit()
+	if err != nil {
+		t.Error(err)
+		return
 	}
 }

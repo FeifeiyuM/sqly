@@ -49,6 +49,16 @@ func execManyTx(ctx context.Context, tx *sql.Tx, queries []string) error {
 	return nil
 }
 
+// Rollback abort transaction
+func (t *Trans) Rollback() error {
+	return t.tx.Rollback()
+}
+
+// Commit commit transaction
+func (t *Trans) Commit() error {
+	return t.tx.Commit()
+}
+
 // Query query results
 func (t *Trans) Query(dest interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
