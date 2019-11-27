@@ -14,6 +14,12 @@ func argToStr(delim string, item interface{}) (string, error) {
 	}
 	ref := reflect.Indirect(reflect.ValueOf(item)).Interface()
 	switch v := ref.(type) {
+	case bool:
+		if v {
+			return "1", nil
+		} else {
+			return "0", nil
+		}
 	case int:
 		return strconv.Itoa(v), nil
 	case int8:

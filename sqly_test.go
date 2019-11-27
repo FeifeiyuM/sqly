@@ -301,3 +301,43 @@ func TestSqlY_NewTrans(t *testing.T) {
 		return
 	}
 }
+
+func TestBoolean_Scan(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	type Acc struct {
+		ID         int64       `sql:"id" json:"id"`
+		Nickname   string      `sql:"nickname" json:"nickname"`
+		Avatar     NullString  `sql:"avatar" json:"avatar"`
+		Email      string      `sql:"email" json:"email"`
+		Mobile     string      `sql:"mobile" json:"mobile"`
+		Role       NullInt32   `sql:"role" json:"role"`
+		Password   string      `sql:"password" json:"password"`
+		IsValid    Boolean     `sql:"is_valid" json:"is_valid"`
+		Stature    NullFloat64 `sql:"stature" json:"stature"`
+		CreateTime time.Time   `sql:"create_time" json:"create_time"`
+	}
+	var accs []*Acc
+	query := "SELECT `id`, `nickname`,  `mobile`, `password`, `role`, `create_time`, `is_valid` FROM `account`;"
+	err = db.Query(&accs, query)
+	if err != nil {
+		t.Error(err)
+	}
+	resStr, _ := json.Marshal(accs)
+	fmt.Println(string(resStr))
+	var accs2 []*Acc
+	err = json.Unmarshal(resStr, &accs2)
+	if err != nil {
+		t.Error(err)
+	}
+	query = "UPDATE `account` SET `is_valid`=? WHERE `id`=?;"
+	aff, err := db.Update(query, true, accs[0].ID)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(aff)
+}

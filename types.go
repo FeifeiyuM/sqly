@@ -172,3 +172,22 @@ func (ns *NullString) UnmarshalJSON(b []byte) error {
 	ns.Valid = err == nil
 	return err
 }
+
+// Boolean boolean
+type Boolean bool
+
+// Scan boolean Scan
+func (b *Boolean) Scan(val interface{}) error {
+	vs := val.([]byte)
+	vb := make([]byte, len(vs))
+	for i, t := range vs {
+		vb[i] = t
+	}
+	v := string(vb)
+	if v == "0" {
+		*b = false
+	} else {
+		*b = true
+	}
+	return nil
+}
