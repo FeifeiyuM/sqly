@@ -178,8 +178,7 @@ type Boolean bool
 
 // Scan boolean Scan
 func (b *Boolean) Scan(val interface{}) error {
-	v := string(val.([]byte))
-	if v == "0" {
+	if val == nil || string(val.([]byte)) == "0" {
 		*b = false
 	} else {
 		*b = true
