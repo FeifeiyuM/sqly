@@ -359,7 +359,7 @@ sql.NullString, 分别为 sqly.NullTime, sqly.NullBool, sqly.NullFloat64, sqly.N
 
 - 使用 sqly 扩展的空字段类型，对象在使用 json.Marshal 时 对应字段为空的会自动解析为 null; json 字符串使用 json.UnMarshal 时，会自动解析为对应的 sqly.NullTime 等扩展类型
 
-- 如果使用 tinyint 或 int 类表示 boolean 字段类型，例如：0 为 false, 1或其他为 true, 在定义字段类型时，可以使用 sqly.Boolean 类型来支持，在 scan 的时候会字段将 int 类型转换成 boolean
+- 如果使用 tinyint 或 int 类表示 bool 字段类型，例如：0 为 false, 1或**其它**为 true, 在定义字段类型时，可以使用 sqly.Boolean 类型来支持，在 scan 的时候会字段将 int 类型转换成 bool, 如果值只有 0 或 1 可以使用原生 bool
 
 ### tips
 - 如果要使用 time.Time 的字段类型, 连接数据库的 dsn 配置中加上 parseTime=true  
