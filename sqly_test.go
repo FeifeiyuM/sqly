@@ -317,7 +317,7 @@ func TestBoolean_Scan(t *testing.T) {
 		Mobile     string      `sql:"mobile" json:"mobile"`
 		Role       NullInt32   `sql:"role" json:"role"`
 		Password   string      `sql:"password" json:"password"`
-		IsValid    Boolean     `sql:"is_valid" json:"is_valid"`
+		IsValid    bool        `sql:"is_valid" json:"is_valid"`
 		Stature    NullFloat64 `sql:"stature" json:"stature"`
 		CreateTime time.Time   `sql:"create_time" json:"create_time"`
 	}
@@ -340,4 +340,37 @@ func TestBoolean_Scan(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Println(aff)
+}
+
+func TestStruct_Nest(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	type Contact struct {
+		Email  string `sql:"email" json:"email"`
+		Mobile string `sql:"mobile" json:"mobile"`
+	}
+	type Base struct {
+		Contact  Contact    `json:"contact"`
+		Nickname string     `sql:"nickname" json:"nickname"`
+		Avatar   NullString `sql:"avatar" json:"avatar"`
+	}
+	type Acc struct {
+		CreateTime time.Time `sql:"create_time" json:"create_time"`
+		ID         int64     `sql:"id" json:"id"`
+		Role       NullInt32 `sql:"role" json:"role"`
+		Base       Base      `json:"base"`
+		Password   string    `sql:"password" json:"password"`
+		IsValid    bool      `sql:"is_valid" json:"is_valid"`
+	}
+	var accs []*Acc
+	query := "SELECT `id`, `avatar`, `email`, `mobile`, `nickname`, `password`, `role`, `create_time`, `is_valid` FROM `account`;"
+	err = db.Query(&accs, query)
+	if err != nil {
+		t.Error(err)
+	}
+	resStr, _ := json.Marshal(accs)
+	fmt.Println(string(resStr))
 }

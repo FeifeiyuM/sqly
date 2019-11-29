@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"time"
 )
 
 // close the Rows
@@ -17,96 +18,8 @@ func closeRows(rows *sql.Rows) error {
 	return nil
 }
 
-//// reflect retrieving result to struct
-//func reflectModel(cols []string, mVal reflect.Value, mType reflect.Type) []interface{} {
-//	kvMap := make(map[string]interface{})
-//	for i := 0; i < mVal.NumField(); i++ {
-//		vf := mVal.Field(i)
-//		tf := mType.Field(i)
-//		f := tf.Tag.Get("sql")
-//		if f == "" {
-//			f = tf.Name
-//		}
-//		kvMap[f] = vf.Addr().Interface()
-//	}
-//	// span fields to list, to receive query values
-//	var scanDest []interface{}
-//	for _, col := range cols {
-//		scanDest = append(scanDest, kvMap[col])
-//	}
-//	return scanDest
-//}
-//
-//// query the database working with results
-//func checkAll(rows *sql.Rows, model interface{}) error {
-//	modelType := reflect.TypeOf(model)
-//	if modelType.Kind() != reflect.Ptr || modelType.Elem().Kind() != reflect.Slice {
-//		return ErrContainer
-//	}
-//	modelVal := reflect.Indirect(reflect.ValueOf(model))
-//	modelType = modelVal.Type()
-//
-//	cols, errC := rows.Columns()
-//	if errC != nil {
-//		return errC
-//	}
-//	// iterate over the rows
-//	for rows.Next() {
-//		if err := rows.Err(); err != nil {
-//			return err
-//		}
-//		mType := modelType.Elem()
-//		mVal := reflect.New(mType)
-//		if mType.Kind() == reflect.Ptr {
-//			fmt.Println("ok")
-//			mVal = reflect.Indirect(mVal)
-//		}
-//		mVal = mVal.Elem()
-//		scanDest := reflectModel(cols, mVal, mType)
-//		// fanout results
-//		if err := rows.Scan(scanDest...); err != nil {
-//			return err
-//		}
-//		modelVal.Set(reflect.Append(modelVal, mVal))
-//	}
-//	// close rows
-//	if err := closeRows(rows); err != nil {
-//		return err
-//	}
-//	return nil
-//}
-//
-//// query the database working with one result
-//func checkOne(rows *sql.Rows, model interface{}) error {
-//	modelType := reflect.TypeOf(model)
-//	if modelType.Kind() != reflect.Ptr || modelType.Elem().Kind() != reflect.Struct {
-//		return errors.New("invalid receive model")
-//	}
-//	modelVal := reflect.Indirect(reflect.ValueOf(model))
-//	modelType = modelVal.Type()
-//
-//	cols, errC := rows.Columns()
-//	if errC != nil {
-//		return errC
-//	}
-//	for rows.Next() {
-//		if err := rows.Err(); err != nil {
-//			return err
-//		}
-//		scanDest := reflectModel(cols, modelVal, modelType)
-//		if err := rows.Scan(scanDest...); err != nil {
-//			return err
-//		}
-//		if rows.Next() {
-//			break
-//		}
-//	}
-//	// close rows
-//	if err := closeRows(rows); err != nil {
-//		return err
-//	}
-//	return nil
-//}
+var _scanner = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
+var _timer = time.Time{}
 
 // Indirect for reflect.Types
 func directType(t reflect.Type) reflect.Type {
@@ -124,19 +37,43 @@ func baseType(t reflect.Type, expected reflect.Kind) (reflect.Type, error) {
 	return t, nil
 }
 
-// fieldsMap
-func fieldsColsMap(cols []string, mType reflect.Type) ([]int, error) {
-	kvMap := make(map[string]int)
-	for i := 0; i < mType.NumField(); i++ {
-		tf := mType.Field(i)
-		f := tf.Tag.Get("sql")
-		if f == "" {
-			f = tf.Name
+func isScanAble(field reflect.StructField) bool {
+	if reflect.PtrTo(field.Type).Implements(_scanner) {
+		return true
+	}
+	if field.Type == reflect.TypeOf(_timer) {
+		return true
+	}
+	if field.Type.Kind() == reflect.Struct {
+		return false
+	}
+	return true
+}
+
+func fieldsIterate(kvMap map[string][]int, pos []int, field reflect.StructField) {
+	if !isScanAble(field) {
+		for i := 0; i < field.Type.NumField(); i++ {
+			_pos := append(pos, i)
+			fieldsIterate(kvMap, _pos, field.Type.Field(i))
 		}
-		kvMap[f] = i
+	} else {
+		tag := field.Tag.Get("sql")
+		if tag == "" {
+			tag = field.Name
+		}
+		kvMap[tag] = pos
+	}
+}
+
+// fieldsMap
+func fieldsColsMap(cols []string, mType reflect.Type) ([][]int, error) {
+	kvMap := make(map[string][]int)
+	for i := 0; i < mType.NumField(); i++ {
+		pos := []int{i}
+		fieldsIterate(kvMap, pos, mType.Field(i))
 	}
 	// span fields to list, to receive query values
-	var fc []int
+	var fc [][]int
 	for _, col := range cols {
 		t, ok := kvMap[col]
 		if !ok {
@@ -148,20 +85,32 @@ func fieldsColsMap(cols []string, mType reflect.Type) ([]int, error) {
 }
 
 // fill values
-func fieldAddrToContainer(v reflect.Value, fields []int, container []interface{}) error {
+func fieldAddrToContainer(v reflect.Value, fields [][]int, container []interface{}) error {
 	//v = reflect.Indirect(v)
 	if v.Kind() != reflect.Struct {
 		return errors.New("argument not a struct")
 	}
 
-	for i, f := range fields {
-		t := v.Field(f)
+	for i, pos := range fields {
+		//t := v.Field(pos)
 		// if this is a pointer and it's nil, allocate a new value and set it
-		if t.Kind() == reflect.Ptr && t.IsNil() {
-			alloc := reflect.New(directType(t.Type()))
-			t.Set(alloc)
+		//if t.Kind() == reflect.Ptr && t.IsNil() {
+		//	alloc := reflect.New(directType(t.Type()))
+		//	t.Set(alloc)
+		//}
+		//container[i] = t.Addr().Interface()
+		vt := v
+		for si, p := range pos {
+			vt = vt.Field(p)
+			if vt.Kind() == reflect.Ptr && vt.IsNil() {
+				alloc := reflect.New(directType(vt.Type()))
+				vt.Set(alloc)
+			}
+			if si == len(pos)-1 {
+				container[i] = vt.Addr().Interface()
+				break
+			}
 		}
-		container[i] = t.Addr().Interface()
 	}
 
 	return nil
@@ -250,7 +199,6 @@ func checkOneV2(rows *sql.Rows, dest interface{}) error {
 
 	// construct container(dest) instance
 	dVal := reflect.Indirect(val)
-
 	// get container type instance
 	dType, err := baseType(val.Type(), reflect.Struct)
 	if err != nil {
