@@ -361,5 +361,39 @@ sql.NullString, 分别为 sqly.NullTime, sqly.NullBool, sqly.NullFloat64, sqly.N
 
 - 如果使用 tinyint 或 int 类表示 bool 字段类型，例如：0 为 false, 1或**其它**为 true, 在定义字段类型时，可以使用 sqly.Boolean 类型来支持，在 scan 的时候会字段将 int 类型转换成 bool, 如果值只有 0 或 1 可以使用原生 bool
 
+- struct 嵌套支持
+```go
+    db, err := New(opt)
+	if err != nil {
+		return
+	}
+	type Contact struct {
+		Email  string `sql:"email" json:"email"`
+		Mobile string `sql:"mobile" json:"mobile"`
+	}
+	type Base struct {
+		Contact  Contact    `json:"contact"`
+		Nickname string     `sql:"nickname" json:"nickname"`
+		Avatar   NullString `sql:"avatar" json:"avatar"`
+	}
+	type Acc struct {
+		ID         int64     `sql:"id" json:"id"`
+		Role       NullInt32 `sql:"role" json:"role"`
+		Base       Base      `json:"base"`
+		Password   string    `sql:"password" json:"password"`
+		IsValid    NullBool  `sql:"is_valid" json:"is_valid"`
+        CreateTime time.Time `sql:"create_time" json:"create_time"`
+	}
+	var accs []*Acc
+	query := "SELECT `id`, `avatar`, `email`, `mobile`, `nickname`, `password`, `role`, `create_time`, `is_valid` FROM `account`;"
+	err = db.Query(&accs, query)
+	if err != nil {
+		fmt.Println("query account error")
+        reutrn 
+	}
+	resStr, _ := json.Marshal(accs)
+	fmt.Println(string(resStr))
+```
+
 ### tips
 - 如果要使用 time.Time 的字段类型, 连接数据库的 dsn 配置中加上 parseTime=true  

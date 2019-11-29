@@ -317,7 +317,7 @@ func TestBoolean_Scan(t *testing.T) {
 		Mobile     string      `sql:"mobile" json:"mobile"`
 		Role       NullInt32   `sql:"role" json:"role"`
 		Password   string      `sql:"password" json:"password"`
-		IsValid    bool        `sql:"is_valid" json:"is_valid"`
+		IsValid    NullBool    `sql:"is_valid" json:"is_valid"`
 		Stature    NullFloat64 `sql:"stature" json:"stature"`
 		CreateTime time.Time   `sql:"create_time" json:"create_time"`
 	}
@@ -363,7 +363,7 @@ func TestStruct_Nest(t *testing.T) {
 		Role       NullInt32 `sql:"role" json:"role"`
 		Base       Base      `json:"base"`
 		Password   string    `sql:"password" json:"password"`
-		IsValid    bool      `sql:"is_valid" json:"is_valid"`
+		IsValid    NullBool  `sql:"is_valid" json:"is_valid"`
 	}
 	var accs []*Acc
 	query := "SELECT `id`, `avatar`, `email`, `mobile`, `nickname`, `password`, `role`, `create_time`, `is_valid` FROM `account`;"
