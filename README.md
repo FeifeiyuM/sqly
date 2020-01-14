@@ -54,7 +54,8 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 
 ### 数据库操作
 - 通用执行操作, 执行一次命令（包括查询、删除、更新、插入, 建表等）
-> func (s *SqlY) Exec(query string, args ...interface{}) (*Affected, error) 
+> func (s *SqlY) Exec(query string, args ...interface{}) (*Affected, error)
+
 > func (s *SqlY) ExecCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
 ```go
     // 创建表
@@ -99,6 +100,7 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 
 - 插入多条数据 
 > func (s *SqlY) InsertMany(query string, args [][]interface{}) (*Affected, error)
+
 > func (s *SqlY) InsertManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error)
 ```go
     query := "INSERT INTO `account` (`nickname`, `mobile`, `email`, `role`) VALUES (?, ?, ?, ?);"
@@ -118,6 +120,7 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 
 - 更新一条数据 
 > func (s *SqlY) Update(query string, args ...interface{}) (*Affected, error)
+
 > func (s *SqlY) ExecCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
 ```go
     query := "UPDATE `account` SET `nickname`=? WHERE `mobile`=?;"
@@ -130,6 +133,7 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 
 - 删除一条数据 
 > func (s *SqlY) Delete(query string, args ...interface{}) (*Affected, error)
+
 > func (s *SqlY) DeleteCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
 ```go
     query := "DELETE FROM `account` WHERE `mobile`=?;"
@@ -142,6 +146,7 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 
 - 查询一条数据 
 > func (s *SqlY) Get(dest interface{}, query string, args ...interface{}) error
+
 > func (s *SqlY) GetCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 ```go
 	type Account struct {
@@ -172,6 +177,7 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 
 - 查询数据
 > func (s *SqlY) Query(dest interface{}, query string, args ...interface{}) error 
+
 > func (s *SqlY) QueryCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 ```go
     type Account struct {
@@ -215,31 +221,38 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 
 - 事务通用执行
 > func (t *Trans) Exec(query string, args ...interface{}) (*Affected, error)
+
 > func (t *Trans) ExecCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
 
 - 事务插入
 > func (t *Trans) Insert(query string, args ...interface{}) (*Affected, error)
+
 > func (t *Trans) InsertCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
 
 - 事务插入多条
 > func (t *Trans) InsertMany(query string, args [][]interface{}) (*Affected, error)
+
 > func (t *Trans) InsertManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error)
 
 - 事务更新
 > func (t *Trans) Update(query string, args ...interface{}) (*Affected, error)
+
 > func (t *Trans) UpdateCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
 
 - 事务删除
 > func (t *Trans) Delete(query string, args ...interface{}) (*Affected, error)
+
 > func (t *Trans) DeleteCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
 
 - 事务查询单条
 > func (t *Trans) Get(dest interface{}, query string, args ...interface{}) error 
+
 > func (t *Trans) GetCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 参数 dest 必须为实例化的 struct 对象指针
 
 - 事务查询
 > func (t *Trans) Query(dest interface{}, query string, args ...interface{}) error
+
 > func (t *Trans) QueryCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 参数 dest 必须为实例化的 struct 对象(或对象指针)数组的指针
 
@@ -307,6 +320,7 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 
 - 事务回调(封装事务开启，关闭，回滚操作)
 > type TxFunc func(tx *Trans) (interface{}, error)
+
 > func (s *SqlY) Transaction(txFunc TxFunc) (interface{}, error)
 ```go
     ctx := context.TODO()
