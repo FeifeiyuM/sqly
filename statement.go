@@ -45,7 +45,7 @@ func argToStr(delim string, item interface{}) (string, error) {
 	case float64:
 		return strconv.FormatFloat(v, 'f', -1, 64), nil
 	case string:
-		return "\"" + v + "\"", nil
+		return strconv.Quote(v), nil
 	case []int:
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
@@ -127,7 +127,8 @@ func argToStr(delim string, item interface{}) (string, error) {
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
-			buffer.WriteString("\"" + v[i] + "\"")
+			//buffer.WriteString("\"" + v[i] + "\"")
+			buffer.WriteString(strconv.Quote(v[i]))
 			if i != len(v)-1 {
 				buffer.WriteString(delim)
 			}

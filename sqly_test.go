@@ -288,7 +288,8 @@ func TestSqlY_NewTrans(t *testing.T) {
 		return
 	}
 	query = "UPDATE `account` SET `nickname`=? WHERE `id`=?;"
-	aff, err := ts.UpdateCtx(ctx, query, "trans_nick", acc.ID)
+	name := `<ok class="12">`
+	aff, err := ts.UpdateCtx(ctx, query, name, acc.ID)
 	if err != nil {
 		t.Error(err)
 		return
