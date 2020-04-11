@@ -1,6 +1,8 @@
 package sqly
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestQueryFmt(t *testing.T) {
 	query := "select * from `accounts` WHERE `id`=? AND `status`=?;"
@@ -19,6 +21,18 @@ func TestQueryFmt(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	if res != resCmp {
+		t.Error("error")
+	}
+
+	query = "INSERT INTO `accounts`(`mobile`, `gender`, `age`, `balance`, `address`, `status`) VALUES " +
+		"(?,?,?,?,?,?)"
+	res, err = queryFormat(query, "18887655678", NullString{String: "male"}, NullInt32{Int32: 12, Valid: true},
+		NullFloat64{}, NullString{}, NullBool{Bool: false, Valid: true})
+	if err != nil {
+		t.Error(err)
+	}
+	resCmp = "INSERT INTO `accounts`(`mobile`, `gender`, `age`, `balance`, `address`, `status`) VALUES (\"18887655678\",\"male\",12,NULL,NULL,0)"
 	if res != resCmp {
 		t.Error("error")
 	}

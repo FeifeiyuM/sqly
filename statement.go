@@ -46,6 +46,34 @@ func argToStr(delim string, item interface{}) (string, error) {
 		return strconv.FormatFloat(v, 'f', -1, 64), nil
 	case string:
 		return strconv.Quote(v), nil
+	case NullInt64:
+		if v.Valid || v.Int64 != 0 {
+			return strconv.FormatInt(v.Int64, 10), nil
+		}
+		return "NULL", nil
+	case NullInt32:
+		if v.Valid || v.Int32 != 0 {
+			return strconv.FormatInt(int64(v.Int32), 10), nil
+		}
+		return "NULL", nil
+	case NullFloat64:
+		if v.Valid || v.Float64 != 0 {
+			return strconv.FormatFloat(v.Float64, 'f', -1, 64), nil
+		}
+		return "NULL", nil
+	case NullString:
+		if v.Valid || v.String != "" {
+			return strconv.Quote(v.String), nil
+		}
+		return "NULL", nil
+	case NullBool:
+		if v.Valid {
+			if v.Bool {
+				return "1", nil
+			}
+			return "0", nil
+		}
+		return "NULL", nil
 	case []int:
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
