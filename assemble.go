@@ -155,7 +155,7 @@ func checkAllV2(rows *sql.Rows, dest interface{}) error {
 	// map column's name and container item fields
 	fields, err := fieldsColsMap(cols, base)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// for store scan items
