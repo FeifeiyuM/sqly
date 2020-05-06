@@ -374,4 +374,7 @@ func TestStruct_Nest(t *testing.T) {
 	}
 	resStr, _ := json.Marshal(accs)
 	fmt.Println(string(resStr))
+	if err := db.Close(); err != nil {
+		t.Error(err)
+	}
 }

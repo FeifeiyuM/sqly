@@ -103,6 +103,11 @@ func (s *SqlY) Ping() error {
 	return s.db.Ping()
 }
 
+// Close close connection
+func (s *SqlY) Close() error {
+	return s.db.Close()
+}
+
 // Query query the database working with results
 func (s *SqlY) Query(dest interface{}, query string, args ...interface{}) error {
 	// query db
