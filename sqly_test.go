@@ -2,8 +2,11 @@ package sqly
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -11,7 +14,7 @@ import (
 )
 
 var opt = &Option{
-	Dsn:             "root:root@tcp(127.0.0.1:3306)/test_db?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Local",
+	Dsn:             "root:root@tcp(127.0.0.1:3306)/test_db?multiStatements=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Local",
 	DriverName:      "mysql",
 	MaxIdleConns:    0,
 	MaxOpenConns:    0,
@@ -30,6 +33,8 @@ type Account struct {
 	IsValid    NullBool    `sql:"is_valid" json:"is_valid"`
 	Stature    NullFloat64 `sql:"stature" json:"stature"`
 	CreateTime time.Time   `sql:"create_time" json:"create_time"`
+	AddTime    NullTime    `sql:"add_time" json:"add_time"`
+	Birthday   NullTime    `sql:"birthday" json:"birthday"`
 }
 
 func TestNew(t *testing.T) {
@@ -50,7 +55,8 @@ func TestSqlY_Exec(t *testing.T) {
 	//	t.Error(err)
 	//}
 
-	query := "CREATE TABLE `account` (" +
+	query := "DROP TABLE IF EXISTS `account`;" +
+		"CREATE TABLE `account` (" +
 		"`id` int(10) unsigned NOT NULL AUTO_INCREMENT," +
 		"`nickname` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL," +
 		"`avatar` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'avatar url'," +
@@ -61,6 +67,8 @@ func TestSqlY_Exec(t *testing.T) {
 		"`is_valid` tinyint(4) DEFAULT NULL COMMENT 'is_valid'," +
 		"`stature` float(5,2) DEFAULT NULL COMMENT 'stature'," +
 		"`create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+		"`add_time` datetime DEFAULT NULL, " +
+		"`birthday` date DEFAULT NULL, " +
 		"PRIMARY KEY (`id`)," +
 		"UNIQUE KEY `mobile_index` (`mobile`)," +
 		"KEY `email_index` (`email`)" +
@@ -377,4 +385,122 @@ func TestStruct_Nest(t *testing.T) {
 	if err := db.Close(); err != nil {
 		t.Error(err)
 	}
+}
+
+func TestStructNest2(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	type Contact struct {
+		Email  string `sql:"email" json:"email"`
+		Mobile string `sql:"mobile" json:"mobile"`
+	}
+	type Base struct {
+		Contact  Contact    `json:"contact"`
+		Nickname string     `sql:"nickname" json:"nickname"`
+		Avatar   NullString `sql:"avatar" json:"avatar"`
+	}
+	type Acc struct {
+		Base     Base   `json:"base"`
+		Password string `sql:"password" json:"password"`
+	}
+	var accs []*Acc
+	query := "SELECT  `email`, `avatar`, `mobile`, `nickname`, `password`  FROM `account`;"
+	err = db.Query(&accs, query)
+	if err != nil {
+		t.Error(err)
+	}
+	resStr, _ := json.Marshal(accs)
+	fmt.Println(string(resStr))
+	if err := db.Close(); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestStructNest3(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	type Contact struct {
+		Email  string `sql:"email" json:"email"`
+		Mobile string `sql:"mobile" json:"mobile"`
+	}
+	type Base struct {
+		Contact  *Contact   `json:"contact"`
+		Nickname string     `sql:"nickname" json:"nickname"`
+		Avatar   NullString `sql:"avatar" json:"avatar"`
+	}
+	type Acc struct {
+		Base     *Base  `json:"base"`
+		Password string `sql:"password" json:"password"`
+	}
+	var accs []*Acc
+	query := "SELECT  `email`, `avatar`, `mobile`, `nickname`, `password`  FROM `account`;"
+	err = db.Query(&accs, query)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	resStr, _ := json.Marshal(accs)
+	fmt.Println(string(resStr))
+	if err := db.Close(); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestSqlY_UpdateMany(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	type accIDs struct {
+		ID int64 `json:"id" sql:"id"`
+	}
+	var ids []*accIDs
+	query := "SELECT `id` FROM `account` WHERE `id`<3"
+	err = db.Query(&ids, query)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	query = "UPDATE `account` SET `password`=? WHERE `id`=?"
+	var params [][]interface{}
+	for _, id := range ids {
+		hash := sha1.New()
+		_, _ = hash.Write([]byte(strconv.FormatInt(id.ID, 10)))
+		passwd := hex.EncodeToString(hash.Sum(nil))
+		params = append(params, []interface{}{passwd, id.ID})
+	}
+
+	err = db.UpdateMany(query, params)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+}
+
+func TestSqlY_NullTime(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	query := "INSERT INTO `account` (`nickname`, `mobile`, `email`, `add_time`, `birthday`) " +
+		"VALUES (?, ?, ?, ?, ?);"
+	var vals = [][]interface{}{
+		{"testq1", "18112362345", "testq1@foxmail.com", NullTime{}, NullTime{}},
+		{"testq2", "18112362346", "testq2@foxmail.com", NullTime{Time: time.Now(), Valid: true}, NullTime{Time: time.Now(), Valid: true}},
+		{"testq3", "18112362347", "testq1@foxmail.com", NullTime{}, NullTime{}},
+		{"testq4", "18112362348", "testq2@foxmail.com", NullTime{}, NullTime{Time: time.Now(), Valid: true}},
+	}
+	aff, err := db.InsertMany(query, vals)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Sprintln(aff)
 }

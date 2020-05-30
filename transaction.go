@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 )
 
 // Trans sql struct for transaction
@@ -114,6 +115,20 @@ func (t *Trans) Update(query string, args ...interface{}) (*Affected, error) {
 	return execOneTx(context.Background(), t.tx, q)
 }
 
+// UpdateMany update many
+func (t *Trans) UpdateMany(query string, args [][]interface{}) (*Affected, error) {
+	var qs []string
+	for _, arg := range args {
+		t, err := queryFormat(query, arg...)
+		if err != nil {
+			return nil, err
+		}
+		qs = append(qs, t)
+	}
+	q := strings.Join(qs, ";")
+	return execOneTx(context.Background(), t.tx, q)
+}
+
 // Delete delete
 func (t *Trans) Delete(query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
@@ -190,6 +205,20 @@ func (t *Trans) UpdateCtx(ctx context.Context, query string, args ...interface{}
 		return nil, err
 	}
 	return execOneTx(ctx, t.tx, q)
+}
+
+// UpdateManyCtx update many trans
+func (t *Trans) UpdateManyCtx(ctx context.Context, query string, args [][]interface{}) error {
+	var q string
+	for _, arg := range args {
+		t, err := queryFormat(query, arg...)
+		if err != nil {
+			return err
+		}
+		q += t + ";"
+	}
+	_, err := execOneTx(ctx, t.tx, q)
+	return err
 }
 
 // DeleteCtx delete

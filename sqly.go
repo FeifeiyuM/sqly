@@ -163,6 +163,20 @@ func (s *SqlY) Update(query string, args ...interface{}) (*Affected, error) {
 	return execOneDb(context.Background(), s.db, q)
 }
 
+// UpdateMany update many
+func (s *SqlY) UpdateMany(query string, args [][]interface{}) error {
+	var q string
+	for _, arg := range args {
+		t, err := queryFormat(query, arg...)
+		if err != nil {
+			return err
+		}
+		q += t + ";"
+	}
+	_, err := execOneDb(context.Background(), s.db, q)
+	return err
+}
+
 // Delete delete item from database
 func (s *SqlY) Delete(query string, args ...interface{}) (*Affected, error) {
 	q, err := queryFormat(query, args...)
@@ -239,6 +253,20 @@ func (s *SqlY) UpdateCtx(ctx context.Context, query string, args ...interface{})
 		return nil, err
 	}
 	return execOneDb(ctx, s.db, q)
+}
+
+// UpdateManyCtx update many
+func (s *SqlY) UpdateManyCtx(ctx context.Context, query string, args [][]interface{}) error {
+	var q string
+	for _, arg := range args {
+		t, err := queryFormat(query, arg...)
+		if err != nil {
+			return err
+		}
+		q += t + ";"
+	}
+	_, err := execOneDb(ctx, s.db, q)
+	return err
 }
 
 // DeleteCtx delete with context

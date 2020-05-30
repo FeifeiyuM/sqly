@@ -74,6 +74,11 @@ func argToStr(delim string, item interface{}) (string, error) {
 			return "0", nil
 		}
 		return "NULL", nil
+	case NullTime:
+		if !v.Valid && v.Time.IsZero() {
+			return "NULL", nil
+		}
+		return strconv.Quote(v.Time.Format("2006-01-02 15:04:05.000000000")), nil
 	case []int:
 		var buffer bytes.Buffer
 		buffer.WriteString("(")

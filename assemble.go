@@ -44,6 +44,9 @@ func isScanAble(field reflect.StructField) bool {
 	if field.Type == reflect.TypeOf(_timer) {
 		return true
 	}
+	if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
+		return false
+	}
 	if field.Type.Kind() == reflect.Struct {
 		return false
 	}
@@ -52,9 +55,18 @@ func isScanAble(field reflect.StructField) bool {
 
 func fieldsIterate(kvMap map[string][]int, pos []int, field reflect.StructField) {
 	if !isScanAble(field) {
-		for i := 0; i < field.Type.NumField(); i++ {
+		var numField int
+		var fieldType reflect.Type
+		if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
+			numField = field.Type.Elem().NumField()
+			fieldType = field.Type.Elem()
+		} else {
+			numField = field.Type.NumField()
+			fieldType = field.Type
+		}
+		for i := 0; i < numField; i++ {
 			_pos := append(pos, i)
-			fieldsIterate(kvMap, _pos, field.Type.Field(i))
+			fieldsIterate(kvMap, _pos, fieldType.Field(i))
 		}
 	} else {
 		tag := field.Tag.Get("sql")
@@ -92,16 +104,13 @@ func fieldAddrToContainer(v reflect.Value, fields [][]int, container []interface
 	}
 
 	for i, pos := range fields {
-		//t := v.Field(pos)
-		// if this is a pointer and it's nil, allocate a new value and set it
-		//if t.Kind() == reflect.Ptr && t.IsNil() {
-		//	alloc := reflect.New(directType(t.Type()))
-		//	t.Set(alloc)
-		//}
-		//container[i] = t.Addr().Interface()
 		vt := v
 		for si, p := range pos {
-			vt = vt.Field(p)
+			if vt.Kind() == reflect.Ptr && vt.Elem().Kind() == reflect.Struct {
+				vt = vt.Elem().Field(p)
+			} else {
+				vt = vt.Field(p)
+			}
 			if vt.Kind() == reflect.Ptr && vt.IsNil() {
 				alloc := reflect.New(directType(vt.Type()))
 				vt.Set(alloc)
