@@ -131,6 +131,25 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 	fmt.Println(aff)
 ```
 
+- 更新多条数据
+> func (s *SqlY) UpdateMany(query string, args [][]interface{}) (*Affected, error)
+> func (s *SqlY) UpdateManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error)
+```go
+    query = "UPDATE `account` SET `password`=? WHERE `id`=?"
+	var params [][]interface{}
+	for _, id := range ids {
+		hash := sha1.New()
+		_, _ = hash.Write([]byte(strconv.FormatInt(id.ID, 10)))
+		passwd := hex.EncodeToString(hash.Sum(nil))
+		params = append(params, []interface{}{passwd, id.ID})
+	}
+	_, err := db.UpdateMany(query, params)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+```
+
 - 删除一条数据 
 > func (s *SqlY) Delete(query string, args ...interface{}) (*Affected, error)
 
@@ -238,6 +257,10 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 > func (t *Trans) Update(query string, args ...interface{}) (*Affected, error)
 
 > func (t *Trans) UpdateCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
+
+- 事务更新多条
+> func (t *Trans) UpdateMany(query string, args [][]interface{}) (*Affected, error)
+> func (t *Trans) UpdateManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error)
 
 - 事务删除
 > func (t *Trans) Delete(query string, args ...interface{}) (*Affected, error)

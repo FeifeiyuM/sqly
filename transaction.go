@@ -208,17 +208,16 @@ func (t *Trans) UpdateCtx(ctx context.Context, query string, args ...interface{}
 }
 
 // UpdateManyCtx update many trans
-func (t *Trans) UpdateManyCtx(ctx context.Context, query string, args [][]interface{}) error {
+func (t *Trans) UpdateManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error) {
 	var q string
 	for _, arg := range args {
 		t, err := queryFormat(query, arg...)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		q += t + ";"
 	}
-	_, err := execOneTx(ctx, t.tx, q)
-	return err
+	return execOneTx(ctx, t.tx, q)
 }
 
 // DeleteCtx delete

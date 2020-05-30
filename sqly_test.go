@@ -478,7 +478,7 @@ func TestSqlY_UpdateMany(t *testing.T) {
 		params = append(params, []interface{}{passwd, id.ID})
 	}
 
-	err = db.UpdateMany(query, params)
+	_, err = db.UpdateMany(query, params)
 	if err != nil {
 		t.Error(err)
 		return
