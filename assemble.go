@@ -37,20 +37,24 @@ func baseType(t reflect.Type, expected reflect.Kind) (reflect.Type, error) {
 	return t, nil
 }
 
-func isScanAble(field reflect.StructField) bool {
-	if reflect.PtrTo(field.Type).Implements(_scanner) {
+func scanAble(t reflect.Type) bool {
+	if reflect.PtrTo(t).Implements(_scanner) {
 		return true
 	}
-	if field.Type == reflect.TypeOf(_timer) {
+	if t == reflect.TypeOf(_timer) {
 		return true
 	}
-	if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
+	if t.Kind() == reflect.Ptr && t.Elem().Kind() == reflect.Struct {
 		return false
 	}
-	if field.Type.Kind() == reflect.Struct {
+	if t.Kind() == reflect.Struct {
 		return false
 	}
 	return true
+}
+
+func isScanAble(field reflect.StructField) bool {
+	return scanAble(field.Type)
 }
 
 func fieldsIterate(kvMap map[string][]int, pos []int, field reflect.StructField) {
@@ -125,6 +129,60 @@ func fieldAddrToContainer(v reflect.Value, fields [][]int, container []interface
 	return nil
 }
 
+func allStructCheck(rows *sql.Rows, dVal reflect.Value, base reflect.Type, isPtr bool) error {
+	// get columns name
+	cols, err := rows.Columns()
+	if err != nil {
+		return err
+	}
+
+	// map column's name and container item fields
+	fields, err := fieldsColsMap(cols, base)
+	if err != nil {
+		return err
+	}
+
+	// for store scan items
+	con := make([]interface{}, len(cols))
+	for rows.Next() {
+		vp := reflect.New(base)
+		v := reflect.Indirect(vp)
+
+		err = fieldAddrToContainer(v, fields, con)
+		if err != nil {
+			return err
+		}
+		// scan val
+		err = rows.Scan(con...)
+		if err != nil {
+			return err
+		}
+		if isPtr {
+			dVal.Set(reflect.Append(dVal, vp))
+		} else {
+			dVal.Set(reflect.Append(dVal, v))
+		}
+	}
+	return nil
+}
+
+func allBaseCheck(rows *sql.Rows, dVal reflect.Value, base reflect.Type, isPtr bool) error {
+	for rows.Next() {
+		vp := reflect.New(base)
+		err := rows.Scan(vp.Interface())
+		if err != nil {
+			return err
+		}
+		// append
+		if isPtr {
+			dVal.Set(reflect.Append(dVal, vp))
+		} else {
+			dVal.Set(reflect.Append(dVal, reflect.Indirect(vp)))
+		}
+	}
+	return nil
+}
+
 // scan all
 func checkAllV2(rows *sql.Rows, dest interface{}) error {
 
@@ -151,69 +209,28 @@ func checkAllV2(rows *sql.Rows, dest interface{}) error {
 	// container item base type
 	base := directType(dType.Elem())
 	// on support struct of current
-	// TODO to support int, string etc.
-	if base.Kind() != reflect.Struct {
-		return ErrContainer
+	if scanAble(base) {
+		// base type （scan bale type)
+		return allBaseCheck(rows, dVal, base, isPtr)
+	} else if base.Kind() == reflect.Struct {
+		//return ErrContainer
+		return allStructCheck(rows, dVal, base, isPtr)
 	}
-	// get columns name
-	cols, err := rows.Columns()
-	if err != nil {
-		return err
-	}
-
-	// map column's name and container item fields
-	fields, err := fieldsColsMap(cols, base)
-	if err != nil {
-		return err
-	}
-
-	// for store scan items
-	con := make([]interface{}, len(cols))
-	for rows.Next() {
-		vp := reflect.New(base)
-		v := reflect.Indirect(vp)
-
-		err = fieldAddrToContainer(v, fields, con)
-		if err != nil {
-			return err
-		}
-
-		// scan val
-		err = rows.Scan(con...)
-		if err != nil {
-			return err
-		}
-		if isPtr {
-			dVal.Set(reflect.Append(dVal, vp))
-		} else {
-			dVal.Set(reflect.Append(dVal, v))
-		}
-	}
-	return nil
+	return ErrContainer
 }
 
-// query the database working with one result
-func checkOneV2(rows *sql.Rows, dest interface{}) error {
-
-	defer func() {
-		if err := closeRows(rows); err != nil {
-			panic(err)
-		}
-	}()
-
-	val := reflect.ValueOf(dest)
-	if val.Kind() != reflect.Ptr || val.IsNil() {
-		return ErrContainer
+func onlyCheck(st int) error {
+	switch st {
+	case 0:
+		return ErrEmpty
+	case 2:
+		return ErrMultiRes
+	default:
+		return nil
 	}
+}
 
-	// construct container(dest) instance
-	dVal := reflect.Indirect(val)
-	// get container type instance
-	dType, err := baseType(val.Type(), reflect.Struct)
-	if err != nil {
-		return err
-	}
-
+func structCheck(rows *sql.Rows, dVal reflect.Value, dType reflect.Type) error {
 	// get columns name
 	cols, err := rows.Columns()
 	if err != nil {
@@ -245,13 +262,47 @@ func checkOneV2(rows *sql.Rows, dest interface{}) error {
 			break
 		}
 	}
+	return onlyCheck(st)
+}
 
-	switch st {
-	case 0:
-		return ErrEmpty
-	case 2:
-		return ErrMultiRes
-	default:
-		return nil
+func baseTypeCheck(rows *sql.Rows, dest interface{}) error {
+	st := 0
+	for rows.Next() {
+		st = 1
+		err := rows.Scan(dest)
+		if err != nil {
+			return err
+		}
+		if rows.Next() {
+			st = 2
+			break
+		}
 	}
+	return onlyCheck(st)
+}
+
+// query the database working with one result
+func checkOneV2(rows *sql.Rows, dest interface{}) error {
+
+	defer func() {
+		if err := closeRows(rows); err != nil {
+			panic(err)
+		}
+	}()
+
+	val := reflect.ValueOf(dest)
+	if val.Kind() != reflect.Ptr || val.IsNil() {
+		return ErrContainer
+	}
+
+	// construct container(dest) instance
+	dVal := reflect.Indirect(val)
+	if scanAble(dVal.Type()) {
+		return baseTypeCheck(rows, dest)
+	}
+	dType, err := baseType(val.Type(), reflect.Struct)
+	if err != nil {
+		return err
+	}
+	return structCheck(rows, dVal, dType)
 }

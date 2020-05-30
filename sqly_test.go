@@ -14,7 +14,7 @@ import (
 )
 
 var opt = &Option{
-	Dsn:             "root:root@tcp(127.0.0.1:3306)/test_db?multiStatements=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Local",
+	Dsn:             "test:mysql123@tcp(127.0.0.1:3306)/test_db?multiStatements=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Local",
 	DriverName:      "mysql",
 	MaxIdleConns:    0,
 	MaxOpenConns:    0,
@@ -502,5 +502,95 @@ func TestSqlY_NullTime(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Sprintln(aff)
+	fmt.Println(aff)
+}
+
+func TestSqlY_BaseType(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+
+	query := "SELECT `id` FROM `account` ORDER BY `id`;"
+	var vals []int64
+
+	err = db.Query(&vals, query)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(vals)
+}
+
+func TestSqlY_BaseType2(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+
+	query := "SELECT `add_time` FROM `account` ORDER BY `id`;"
+	var vals []*NullTime
+
+	err = db.Query(&vals, query)
+	if err != nil {
+		t.Error(err)
+	}
+	res, _ := json.Marshal(vals)
+	fmt.Println(string(res))
+}
+
+func TestSqly_BaseType3(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+
+	query := "SELECT `nickname` FROM `account` ORDER BY `id`;"
+	var vals []string
+	err = db.Query(&vals, query)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(vals)
+}
+
+func TestSqlY_OneBase(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	query := "SELECT COUNT(*) FROM `account`;"
+	var num int
+	err = db.Get(&num, query)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("num", num)
+}
+
+func TestSqlY_OneBase2(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	query := "SELECT `create_time` FROM `account` limit 1;"
+	create := &NullTime{}
+	err = db.Get(create, query)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("create", create)
+}
+
+func TestSqly_OneBase3(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	query := "SELECT `nickname` FROM `account` limit 1;"
+	var nickname string
+	err = db.Get(&nickname, query)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("nickname", nickname)
 }
