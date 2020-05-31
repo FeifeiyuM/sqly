@@ -171,6 +171,19 @@ func argToStr(delim string, item interface{}) (string, error) {
 		}
 		buffer.WriteString(")")
 		return buffer.String(), nil
+	case []time.Time:
+		var buffer bytes.Buffer
+		buffer.WriteString("(")
+		for i := 0; i < len(v); i++ {
+			t := v[i].Format("2006-01-02 15:04:05.000000000")
+			buffer.WriteString(strconv.Quote(t))
+			if i != len(v)-1 {
+				buffer.WriteString(delim)
+			}
+		}
+		buffer.WriteString(")")
+		return buffer.String(), nil
+
 	default:
 		return "", ErrArgType
 	}

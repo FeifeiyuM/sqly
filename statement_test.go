@@ -1,7 +1,9 @@
 package sqly
 
 import (
+	"fmt"
 	"testing"
+	"time"
 )
 
 func TestQueryFmt(t *testing.T) {
@@ -36,4 +38,19 @@ func TestQueryFmt(t *testing.T) {
 	if res != resCmp {
 		t.Error("error")
 	}
+
+	query = "INSERT INTO `accounts`(`create_time`, `add_time`) VALUES (?,?)"
+	res, err = queryFormat(query, time.Now(), NullTime{Time: time.Now(), Valid: true})
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(res)
+
+	query = "SELECT * FROM `accounts` WHERE `add_time` IN ?"
+	times := []time.Time{time.Now(), time.Now(), time.Now()}
+	res, err = queryFormat(query, times)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Print(res)
 }
