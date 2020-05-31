@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func argToStr(delim string, item interface{}) (string, error) {
@@ -46,6 +47,8 @@ func argToStr(delim string, item interface{}) (string, error) {
 		return strconv.FormatFloat(v, 'f', -1, 64), nil
 	case string:
 		return strconv.Quote(v), nil
+	case time.Time:
+		return strconv.Quote(v.Format("2006-01-02 15:04:05.000000000")), nil
 	case NullInt64:
 		if v.Valid || v.Int64 != 0 {
 			return strconv.FormatInt(v.Int64, 10), nil
