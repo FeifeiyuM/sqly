@@ -3,6 +3,8 @@ package sqly
 import (
 	"database/sql"
 	"encoding/json"
+	"strings"
+	"time"
 )
 
 // NullTime is an alias for sql.NullTime
@@ -184,4 +186,51 @@ func (b *Boolean) Scan(val interface{}) error {
 		*b = true
 	}
 	return nil
+}
+
+// ColumnsType Working with Unknown Columns
+// mysql only
+func parseColumnsType(colsType []*sql.ColumnType) []interface{} {
+	var cTypes []interface{}
+
+	for _, ct := range colsType {
+		nullAble, _ := ct.Nullable()
+		switch strings.ToUpper(ct.DatabaseTypeName()) {
+		case "MEDIUMINT", "INT", "INTEGER", "BIGINT":
+			if nullAble {
+				cTypes = append(cTypes, new(NullInt64))
+			} else {
+				cTypes = append(cTypes, new(int64))
+			}
+		case "SMALLINT", "TINYINT":
+			if nullAble {
+				cTypes = append(cTypes, new(NullInt32))
+			} else {
+				cTypes = append(cTypes, new(int32))
+			}
+		case "FLOAT", "DOUBLE", "DECIMAL":
+			if nullAble {
+				cTypes = append(cTypes, new(NullFloat64))
+			} else {
+				cTypes = append(cTypes, new(float64))
+			}
+		case "DATE", "TIME", "YEAR", "DATETIME", "TIMESTAMP":
+			if nullAble {
+				cTypes = append(cTypes, new(NullTime))
+			} else {
+				cTypes = append(cTypes, new(time.Time))
+			}
+		case "CHAR", "VARCHAR", "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT":
+			if nullAble {
+				cTypes = append(cTypes, new(NullString))
+			} else {
+				cTypes = append(cTypes, new(string))
+			}
+		case "TINYBLOB", "BLOB", "MEDIUMBLOB", "LONGBLOB":
+			cTypes = append(cTypes, new(sql.RawBytes))
+		default:
+			cTypes = append(cTypes, new(sql.RawBytes))
+		}
+	}
+	return cTypes
 }

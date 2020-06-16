@@ -594,3 +594,35 @@ func TestSqly_OneBase3(t *testing.T) {
 	}
 	fmt.Println("nickname", nickname)
 }
+
+func TestSqlY_QueryOneMap(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+
+	acc := make(map[string]interface{})
+	query := "SELECT * FROM `account` WHERE `id`=?;"
+	err = db.Get(&acc, query, 1)
+	if err != nil {
+		t.Error(err)
+	}
+	accStr, _ := json.Marshal(acc)
+	fmt.Printf("rows %s", accStr)
+}
+
+func TestSqlY_QueryMap(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	var accs []map[string]interface{}
+	query := "SELECT * FROM `account`;"
+
+	err = db.Query(&accs, query, nil)
+	if err != nil {
+		t.Error(err)
+	}
+	accStr, _ := json.Marshal(accs)
+	fmt.Printf("rows %s", accStr)
+}

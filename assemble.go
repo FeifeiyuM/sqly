@@ -47,7 +47,7 @@ func scanAble(t reflect.Type) bool {
 	if t.Kind() == reflect.Ptr && t.Elem().Kind() == reflect.Struct {
 		return false
 	}
-	if t.Kind() == reflect.Struct {
+	if t.Kind() == reflect.Struct || t.Kind() == reflect.Map {
 		return false
 	}
 	return true
@@ -183,6 +183,28 @@ func allBaseCheck(rows *sql.Rows, dVal reflect.Value, base reflect.Type, isPtr b
 	return nil
 }
 
+func allMapCheck(rows *sql.Rows, dVal reflect.Value) error {
+	colsType, err := rows.ColumnTypes()
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		con := parseColumnsType(colsType)
+
+		if err := rows.Scan(con...); err != nil {
+			return err
+		}
+		v := make(map[string]interface{})
+		for i, col := range colsType {
+			v[col.Name()] = con[i].(interface{})
+		}
+		// append
+		dVal.Set(reflect.Append(dVal, reflect.ValueOf(v)))
+	}
+
+	return nil
+}
+
 // scan all
 func checkAllV2(rows *sql.Rows, dest interface{}) error {
 
@@ -213,8 +235,11 @@ func checkAllV2(rows *sql.Rows, dest interface{}) error {
 		// base type （scan bale type)
 		return allBaseCheck(rows, dVal, base, isPtr)
 	} else if base.Kind() == reflect.Struct {
-		//return ErrContainer
+		// struct type
 		return allStructCheck(rows, dVal, base, isPtr)
+	} else if base.Kind() == reflect.Map {
+		// map type
+		return allMapCheck(rows, dVal)
 	}
 	return ErrContainer
 }
@@ -265,6 +290,36 @@ func structCheck(rows *sql.Rows, dVal reflect.Value, dType reflect.Type) error {
 	return onlyCheck(st)
 }
 
+func mapCheck(rows *sql.Rows, dVal reflect.Value) error {
+	colsType, err := rows.ColumnTypes()
+	if err != nil {
+		return err
+	}
+
+	columns := parseColumnsType(colsType)
+	st := 0
+	for rows.Next() {
+		st = 1
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		if err := rows.Scan(columns...); err != nil {
+			return err
+		}
+		if rows.Next() {
+			st = 2
+			break
+		}
+	}
+	if err := onlyCheck(st); err != nil {
+		return err
+	}
+	for i, col := range colsType {
+		dVal.SetMapIndex(reflect.ValueOf(col.Name()), reflect.ValueOf(columns[i]))
+	}
+	return nil
+}
+
 func baseTypeCheck(rows *sql.Rows, dest interface{}) error {
 	st := 0
 	for rows.Next() {
@@ -299,10 +354,16 @@ func checkOneV2(rows *sql.Rows, dest interface{}) error {
 	dVal := reflect.Indirect(val)
 	if scanAble(dVal.Type()) {
 		return baseTypeCheck(rows, dest)
+	} else if dVal.Kind() == reflect.Struct {
+		// struct type
+		dType, err := baseType(val.Type(), reflect.Struct)
+		if err != nil {
+			return err
+		}
+		return structCheck(rows, dVal, dType)
+	} else if dVal.Kind() == reflect.Map {
+		// map type
+		return mapCheck(rows, dVal)
 	}
-	dType, err := baseType(val.Type(), reflect.Struct)
-	if err != nil {
-		return err
-	}
-	return structCheck(rows, dVal, dType)
+	return ErrContainer
 }
