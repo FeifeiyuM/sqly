@@ -432,5 +432,66 @@ sql.NullString, 分别为 sqly.NullTime, sqly.NullBool, sqly.NullFloat64, sqly.N
 	fmt.Println(string(resStr))
 ```
 
+- map[string]inteface{} 类型支持
+```go
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	var accs []map[string]interface{}
+	query := "SELECT * FROM `account`;"
+
+	err = db.Query(&accs, query, nil)
+	if err != nil {
+		t.Error(err)
+	}
+	accStr, _ := json.Marshal(accs)
+	fmt.Printf("rows %s", accStr)
+```
+
+- 可scan 类型支持 int, int32, int64, string, time.Time, 空字段类型 (及其他们的数组结构)
+```go
+    db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	query := "SELECT COUNT(*) FROM `account`;"
+	var num int
+	err = db.Get(&num, query)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("num", num)
+```
+
+```go
+    db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	query := "SELECT `create_time` FROM `account` limit 1;"
+	create := &NullTime{}
+	err = db.Get(create, query)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("create", create)
+```
+
+```go
+    db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+
+	query := "SELECT `nickname` FROM `account` ORDER BY `id`;"
+	var vals []string
+	err = db.Query(&vals, query)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(vals)
+```
+
 ### tips
 - 如果要使用 time.Time 的字段类型, 连接数据库的 dsn 配置中加上 parseTime=true  
