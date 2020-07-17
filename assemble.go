@@ -93,9 +93,12 @@ func fieldsColsMap(cols []string, mType reflect.Type) ([][]int, error) {
 	for _, col := range cols {
 		t, ok := kvMap[col]
 		if !ok {
-			return nil, fmt.Errorf("field %s not exist", col)
+			//return nil, fmt.Errorf("field %s not exist", col)
+			fc = append(fc, []int{-1})
+		} else {
+			fc = append(fc, t)
 		}
-		fc = append(fc, t)
+
 	}
 	return fc, nil
 }
@@ -110,6 +113,11 @@ func fieldAddrToContainer(v reflect.Value, fields [][]int, container []interface
 	for i, pos := range fields {
 		vt := v
 		for si, p := range pos {
+			// 处理接收字段少于数据库字段问题
+			if p == -1 {
+				container[i] = new(sql.RawBytes)
+				continue
+			}
 			if vt.Kind() == reflect.Ptr && vt.Elem().Kind() == reflect.Struct {
 				vt = vt.Elem().Field(p)
 			} else {

@@ -170,6 +170,38 @@ func TestSqlY_Query(t *testing.T) {
 	fmt.Printf("rows %s", accStr)
 }
 
+func TestSqlY_Query_All(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	var accs []*Account
+	query := "SELECT * FROM `account` limit 1;"
+
+	err = db.Query(&accs, query, nil)
+	if err != nil {
+		t.Error(err)
+	}
+	accStr, _ := json.Marshal(accs)
+	fmt.Printf("rows %s", accStr)
+}
+
+func TestSqlY_Get_All(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	acc := &Account{}
+	query := "SELECT * FROM `account` WHERE `id`=2"
+
+	err = db.Get(acc, query, nil)
+	if err != nil {
+		t.Error(err)
+	}
+	accStr, _ := json.Marshal(acc)
+	fmt.Printf("rows %s", accStr)
+}
+
 func TestSqlY_Delete(t *testing.T) {
 	db, err := New(opt)
 	if err != nil {

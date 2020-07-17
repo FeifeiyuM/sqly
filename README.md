@@ -432,7 +432,7 @@ sql.NullString, 分别为 sqly.NullTime, sqly.NullBool, sqly.NullFloat64, sqly.N
 	fmt.Println(string(resStr))
 ```
 
-- map[string]inteface{} 类型支持
+- map[string]inteface{} 类型支持(目前支持只 MySQL)
 ```go
 	db, err := New(opt)
 	if err != nil {
