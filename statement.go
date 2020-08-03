@@ -82,6 +82,11 @@ func argToStr(delim string, item interface{}) (string, error) {
 			return "NULL", nil
 		}
 		return strconv.Quote(v.Time.Format("2006-01-02 15:04:05.000000000")), nil
+	case Boolean:
+		if v {
+			return "1", nil
+		}
+		return "0", nil
 	case []int:
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
