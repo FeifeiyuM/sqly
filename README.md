@@ -391,7 +391,7 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
     
     
 ### 胶囊查询
-> 在试行事务操作的时候，需要显式得去初始化和传递事务句柄 tx, 容易出现事务和非事务查询的混用，严重的情况还会出现查询线程池耗尽产生死锁（在事务内，申请非事务查询线程，在高并发的时候会尝试该死锁）   
+> 在执行事务操作的时候，我们需要显式得去初始化和传递事务句柄 tx,  常常不注意就会出现事务和非事务操作混用的问题，严重时还会出现查询线程池耗尽产生死锁（在事务内，申请非事务查询线程，在高并发的时候会尝试该死锁）   
 > 为了减少在开发过程中减少对事务和非事务的关注，sqly 采用闭包的方式封装一系列数据库操作，并采用 context 的方式在函数之间传递事务句柄，只需要在初始化闭包的时候确认是否开始事务。
 
 ### 胶囊操作相关方法
@@ -399,8 +399,8 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 > func NewCapsule(sqlY *SqlY) *Capsule 
 
 - 开启胶囊操作
-> type CapFunc func(ctx context.Context) (interface{}, error)
-> func (c *Capsule) StartCapsule(ctx context.Context, isTrans bool, capFunc CapFunc) (interface{}, error)   
+> type CapFunc func(ctx context.Context) (interface{}, error)     
+> func (c *Capsule) StartCapsule(ctx context.Context, isTrans bool, capFunc CapFunc) (interface{}, error)     
 > StartCapsule 开启胶囊，参数 ctx 上下文用于携带胶囊句柄，isTrans 是否开始事务 true 开启。 CapFunc 闭包函数，所有逻辑都在该闭包内实现
 
 > func (c *Capsule) Exec(query string, args ...interface{}) (*Affected, error)
