@@ -88,6 +88,9 @@ func argToStr(delim string, item interface{}) (string, error) {
 		}
 		return "0", nil
 	case []int:
+		if len(v) == 0 {
+			return "", ErrEmptyArrayInStatement
+		}
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
@@ -99,6 +102,9 @@ func argToStr(delim string, item interface{}) (string, error) {
 		buffer.WriteString(")")
 		return buffer.String(), nil
 	case []int8:
+		if len(v) == 0 {
+			return "", ErrEmptyArrayInStatement
+		}
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
@@ -110,6 +116,9 @@ func argToStr(delim string, item interface{}) (string, error) {
 		buffer.WriteString(")")
 		return buffer.String(), nil
 	case []int16:
+		if len(v) == 0 {
+			return "", ErrEmptyArrayInStatement
+		}
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
@@ -121,6 +130,9 @@ func argToStr(delim string, item interface{}) (string, error) {
 		buffer.WriteString(")")
 		return buffer.String(), nil
 	case []int32:
+		if len(v) == 0 {
+			return "", ErrEmptyArrayInStatement
+		}
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
@@ -132,6 +144,9 @@ func argToStr(delim string, item interface{}) (string, error) {
 		buffer.WriteString(")")
 		return buffer.String(), nil
 	case []int64:
+		if len(v) == 0 {
+			return "", ErrEmptyArrayInStatement
+		}
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
@@ -143,6 +158,9 @@ func argToStr(delim string, item interface{}) (string, error) {
 		buffer.WriteString(")")
 		return buffer.String(), nil
 	case []float32:
+		if len(v) == 0 {
+			return "", ErrEmptyArrayInStatement
+		}
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
@@ -154,6 +172,9 @@ func argToStr(delim string, item interface{}) (string, error) {
 		buffer.WriteString(")")
 		return buffer.String(), nil
 	case []float64:
+		if len(v) == 0 {
+			return "", ErrEmptyArrayInStatement
+		}
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
@@ -165,6 +186,9 @@ func argToStr(delim string, item interface{}) (string, error) {
 		buffer.WriteString(")")
 		return buffer.String(), nil
 	case []string:
+		if len(v) == 0 {
+			return "", ErrEmptyArrayInStatement
+		}
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
@@ -177,6 +201,9 @@ func argToStr(delim string, item interface{}) (string, error) {
 		buffer.WriteString(")")
 		return buffer.String(), nil
 	case []time.Time:
+		if len(v) == 0 {
+			return "", ErrEmptyArrayInStatement
+		}
 		var buffer bytes.Buffer
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {

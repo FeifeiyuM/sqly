@@ -113,6 +113,9 @@ func (s *SqlY) Query(dest interface{}, query string, args ...interface{}) error 
 	// query db
 	q, err := queryFormat(query, args...)
 	if err != nil {
+		if errors.Is(err, ErrEmptyArrayInStatement) {
+			return nil
+		}
 		return err
 	}
 	rows, err := s.db.Query(q)
@@ -127,6 +130,9 @@ func (s *SqlY) Get(dest interface{}, query string, args ...interface{}) error {
 	// query db
 	q, err := queryFormat(query, args...)
 	if err != nil {
+		if errors.Is(err, ErrEmptyArrayInStatement) {
+			return nil
+		}
 		return err
 	}
 	rows, err := s.db.Query(q)
@@ -204,6 +210,9 @@ func (s *SqlY) QueryCtx(ctx context.Context, dest interface{}, query string, arg
 	// query db
 	q, err := queryFormat(query, args...)
 	if err != nil {
+		if errors.Is(err, ErrEmptyArrayInStatement) {
+			return nil
+		}
 		return err
 	}
 	rows, err := s.db.QueryContext(ctx, q)
@@ -218,6 +227,9 @@ func (s *SqlY) GetCtx(ctx context.Context, dest interface{}, query string, args 
 	// query db
 	q, err := queryFormat(query, args...)
 	if err != nil {
+		if errors.Is(err, ErrEmptyArrayInStatement) {
+			return nil
+		}
 		return err
 	}
 	rows, err := s.db.QueryContext(ctx, q)

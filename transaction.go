@@ -64,6 +64,9 @@ func (t *Trans) Commit() error {
 func (t *Trans) Query(dest interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
 	if err != nil {
+		if errors.Is(err, ErrEmptyArrayInStatement) {
+			return nil
+		}
 		return err
 	}
 	// query db
@@ -78,6 +81,9 @@ func (t *Trans) Query(dest interface{}, query string, args ...interface{}) error
 func (t *Trans) Get(dest interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
 	if err != nil {
+		if errors.Is(err, ErrEmptyArrayInStatement) {
+			return nil
+		}
 		return err
 	}
 	// query db
@@ -156,6 +162,9 @@ func (t *Trans) ExecMany(queries []string) error {
 func (t *Trans) QueryCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
 	if err != nil {
+		if errors.Is(err, ErrEmptyArrayInStatement) {
+			return nil
+		}
 		return err
 	}
 	// query db
@@ -170,6 +179,9 @@ func (t *Trans) QueryCtx(ctx context.Context, dest interface{}, query string, ar
 func (t *Trans) GetCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
 	q, err := queryFormat(query, args...)
 	if err != nil {
+		if errors.Is(err, ErrEmptyArrayInStatement) {
+			return nil
+		}
 		return err
 	}
 	// query db

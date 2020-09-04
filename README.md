@@ -226,7 +226,8 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
     fmt.Println(accsStr)
 ```
 参数 dest 必须为实例化的 struct 对象(或对象指针)数组的指针 
-
+     
+    
 ### 数据库事务
 - 事务开启
 提交，回滚  
@@ -387,7 +388,158 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
     }   
     fmt.Println(res)
 ```
+    
+    
+### 胶囊查询
+> 在试行事务操作的时候，需要显式得去初始化和传递事务句柄 tx, 容易出现事务和非事务查询的混用，严重的情况还会出现查询线程池耗尽产生死锁（在事务内，申请非事务查询线程，在高并发的时候会尝试该死锁）   
+> 为了减少在开发过程中减少对事务和非事务的关注，sqly 采用闭包的方式封装一系列数据库操作，并采用 context 的方式在函数之间传递事务句柄，只需要在初始化闭包的时候确认是否开始事务。
 
+### 胶囊操作相关方法
+- 初始化胶囊句柄
+> func NewCapsule(sqlY *SqlY) *Capsule 
+
+- 开启胶囊操作
+> type CapFunc func(ctx context.Context) (interface{}, error)
+> func (c *Capsule) StartCapsule(ctx context.Context, isTrans bool, capFunc CapFunc) (interface{}, error)   
+> StartCapsule 开启胶囊，参数 ctx 上下文用于携带胶囊句柄，isTrans 是否开始事务 true 开启。 CapFunc 闭包函数，所有逻辑都在该闭包内实现
+
+> func (c *Capsule) Exec(query string, args ...interface{}) (*Affected, error)
+
+> func (c *Capsule) ExecCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
+
+- 插入
+> func (c *Capsule) Insert(query string, args ...interface{}) (*Affected, error)
+
+> func (c *Capsule) InsertCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
+
+- 插入多条
+> func (c *Capsule) InsertMany(query string, args [][]interface{}) (*Affected, error)
+
+> func (c *Capsule) InsertManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error)
+
+- 更新
+> func (c *Capsule) Update(query string, args ...interface{}) (*Affected, error)
+
+> func (c *Capsule) UpdateCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
+
+- 更新多条
+> func (c *Capsule) UpdateMany(query string, args [][]interface{}) (*Affected, error)
+> func (c *Capsule) UpdateManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error)
+
+- 删除
+> func (c *Capsule) Delete(query string, args ...interface{}) (*Affected, error)
+
+> func (c *Capsule) DeleteCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
+
+- 查询单条
+> func (c *Capsule) Get(dest interface{}, query string, args ...interface{}) error 
+
+> func (c *Capsule) GetCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+参数 dest 必须为实例化的 struct 对象指针
+
+- 查询
+> func (c *Capsule) Query(dest interface{}, query string, args ...interface{}) error
+
+> func (c *Capsule) QueryCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+参数 dest 必须为实例化的 struct 对象(或对象指针)数组的指针
+
+#### tips: 以上 sql 操作会根据开启胶囊时是否开启事务（isTrans) 设置来自动选择采用事务查询，还是非事务查询。
+
+胶囊例1、事务操作
+```go
+func TestCapsule_trans2(t *testing.T) {
+	db, err := New(opt)  // 初始化sqly(数据库连接）
+	if err != nil {
+		t.Error(err)
+	}
+	capsule := NewCapsule(db)  // 创建一个胶囊句柄
+	ctx := context.TODO()  // 胶囊查询必须携带 context 参数
+    // isTrans=true 开始事务查询
+	ret, err := capsule.StartCapsule(ctx, true, func(ctx context.Context) (interface{}, error) {
+        // 在闭包内执行相关数据库操作
+		var accs []*Account
+		query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` " +
+			"FROM `account`"
+		err := capsule.Query(ctx, &accs, query, "18812311232")  // 执行查询
+		if err != nil {
+			return nil, err
+		}
+		query = "UPDATE `account` SET `nickname`=? WHERE `id`=?" 
+		_, err = capsule.Update(ctx, query, "nick_trans2", accs[0].ID)  // 更新
+		if err != nil {
+			return nil, err
+		}
+		query = "UPDATE `account` SET `avatar`=? WHERE `id`=?"
+		aff, err := capsule.Update(ctx, query, "test2.png", accs[1].ID) // 更新
+		if err != nil {
+			return nil, err
+		}
+		query = "INSERT INTO `account` (`nickname`, `mobile`, `email`, `role`) " +
+			"VALUES (?, ?, ?, ?);"
+		aff, err = capsule.Insert(ctx, query, "nick_test2", "18712311235", "testx1@foxmail.com", 1)  // 插入
+		if err != nil {
+			t.Error(err)
+		}
+		if aff != nil {
+			return nil, errors.New("error")
+		}
+		return aff, nil
+	})
+	if err.Error() != "error" {
+		t.Error(err)
+	}
+	fmt.Sprintln(ret)
+}
+```
+胶囊例2、非事务操作
+```go
+func TestCapsule_raw(t *testing.T) {
+	db, err := New(opt)  // 初始化sqly(数据库连接）
+	if err != nil {
+		t.Error(err)
+	}
+	capsule := NewCapsule(db)  // 创建一个胶囊句柄
+	ctx := context.TODO()  // 胶囊查询必须携带 context 参数
+    // isTrans=false 不开启事务
+	ret, err := capsule.StartCapsule(ctx, false, func(ctx context.Context) (interface{}, error) {
+        // 在闭包内执行相关数据库操作
+		var accs []*Account
+		query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` " +
+			"FROM `account`"
+		err := capsule.Query(ctx, &accs, query, "18812311232")  // 查询
+		if err != nil {
+			return nil, err
+		}
+		query = "UPDATE `account` SET `nickname`=? WHERE `id`=?"
+		_, err = capsule.Update(ctx, query, "nick_trans3", accs[0].ID) // 更新
+		if err != nil {
+			return nil, err
+		}
+		query = "UPDATE `account` SET `avatar`=? WHERE `id`=?"
+		aff, err := capsule.Update(ctx, query, "test3.png", accs[1].ID)  // 更新
+		if err != nil {
+			return nil, err
+		}
+		query = "INSERT INTO `account` (`nickname`, `mobile`, `email`, `role`) " +
+			"VALUES (?, ?, ?, ?);"
+		aff, err = capsule.Insert(ctx, query, "nick_test3", "18712311235", "testx1@foxmail.com", 1)  // 插入
+		if err != nil {
+			t.Error(err)
+		}
+		if aff != nil {
+			return nil, errors.New("error")
+		}
+		return aff, nil
+	})
+	if err.Error() != "error" {
+		t.Error(err)
+	}
+	fmt.Sprintln(ret)
+}
+```
+从胶囊例1和胶囊例2中可以发现，采用胶囊操作时，事务操作和非事务操作区别仅在 StartCapsule 中决定是否开始事务，在实现业务逻辑的查询，更新查询等操作的过程中都无需关注是否开启事务。
+      
+      
 ### 支持类型
 - struct 中定义的字段类型须是 database/sql 中能够被 Scan 的类型 (int64, float64, bool, []byte, string, time.Time, nil)
 
@@ -495,3 +647,5 @@ sql.NullString, 分别为 sqly.NullTime, sqly.NullBool, sqly.NullFloat64, sqly.N
 
 ### tips
 - 如果要使用 time.Time 的字段类型, 连接数据库的 dsn 配置中加上 parseTime=true  
+
+

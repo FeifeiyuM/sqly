@@ -24,4 +24,9 @@ var (
 
 	// ErrEmpty empty
 	ErrEmpty = errors.New("no result for get query ")
+
+	// ErrCapsule Invalid Capsule
+	ErrCapsule = errors.New("query capsule is not available")
+
+	ErrEmptyArrayInStatement = errors.New("has empty array in query arguments")
 )

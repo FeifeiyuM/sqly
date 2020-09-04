@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"testing"
@@ -657,4 +658,35 @@ func TestSqlY_QueryMap(t *testing.T) {
 	}
 	accStr, _ := json.Marshal(accs)
 	fmt.Printf("rows %s", accStr)
+}
+
+func TestSqly_EmptyArray(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	var accs []map[string]interface{}
+	query := "SELECT * FROM `account` WHERE `id` IN ?;"
+	var ids []int64
+	err = db.Query(&accs, query, ids)
+	if err != nil {
+		t.Error(err)
+	}
+	accStr, _ := json.Marshal(accs)
+	fmt.Printf("rows %s", accStr)
+}
+
+func TestSqly_EmptyArray2(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	query := "UPDATE `account` SET `nickname`=`nickname`+'t' WHERE `id` IN ?;"
+	var ids []int64
+	aff, err := db.Update(query, ids)
+	if !errors.Is(err, ErrEmptyArrayInStatement) {
+		t.Error(err)
+	}
+	fmt.Sprintln(aff)
+
 }
