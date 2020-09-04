@@ -7,6 +7,40 @@ import (
 	"testing"
 )
 
+func TestCapsule_Exec(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	capsule := NewCapsule(db)
+	ctx := context.TODO()
+	_, err = capsule.StartCapsule(ctx, true, func(ctx context.Context) (interface{}, error) {
+		query := "DROP TABLE IF EXISTS `account`;" +
+			"CREATE TABLE `account` (" +
+			"`id` int(10) unsigned NOT NULL AUTO_INCREMENT," +
+			"`nickname` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL," +
+			"`avatar` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'avatar url'," +
+			"`mobile` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'mobile number'," +
+			"`email` varchar(320) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'email'," +
+			"`password` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'password'," +
+			"`role` tinyint(4) DEFAULT '0' COMMENT 'role'," +
+			"`is_valid` tinyint(4) DEFAULT NULL COMMENT 'is_valid'," +
+			"`stature` float(5,2) DEFAULT NULL COMMENT 'stature'," +
+			"`create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+			"`add_time` datetime DEFAULT NULL, " +
+			"`birthday` date DEFAULT NULL, " +
+			"PRIMARY KEY (`id`)," +
+			"UNIQUE KEY `mobile_index` (`mobile`)," +
+			"KEY `email_index` (`email`)" +
+			") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;"
+		_, err = capsule.Exec(ctx, query)
+		return nil, err
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestCapsule_InsertUpdate(t *testing.T) {
 	db, err := New(opt)
 	if err != nil {
