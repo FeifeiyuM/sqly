@@ -7,12 +7,12 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 [![Coverage Status](https://coveralls.io/repos/github/FeifeiyuM/sqly/badge.svg?branch=master)](https://coveralls.io/github/FeifeiyuM/sqly?branch=master)
 
 主要目标（功能)：
-- 是实现类似于 json.Marshal 类似的功能，将数据库查询结果反射成为 struct 对象。
+- 是实现类似于 json.Unmarshal 类似的功能，将数据库查询结果反射成为 struct 对象。
 简化 database/sql 原生的 span 书写方法。
 
 - 通过回调函数的形式封装了事务操作，简化原生包关于事务逻辑的操作
 
-- 封装了原生 database/sql 包不具有的, 更新（Update), 插入(Insert), 删除（DELETE), 通用sql 执行(Exec) 等方法（Exec）
+- 封装了原生 database/sql 包不具有的, 更新（Update), 插入(Insert), 删除（DELETE), 通用sql 执行(Exec) 等方法
 
 
 ## 使用
@@ -49,7 +49,7 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 > ConnMaxLifeTime: 连接的生命周期
 
 
-详细配置课查看 【Go database/sql tutorial](http://go-database-sql.org/connection-pool.html), [go-sql-driver/mysql](https://github.com/go-sql-driver/mysql) 等。
+详细配置可以查看 【Go database/sql tutorial](http://go-database-sql.org/connection-pool.html), [go-sql-driver/mysql](https://github.com/go-sql-driver/mysql) 等。
 
 
 ### 数据库操作
@@ -131,7 +131,7 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 	fmt.Println(aff)
 ```
 
-- 更新多条数据
+- 执行多条更新语句
 > func (s *SqlY) UpdateMany(query string, args [][]interface{}) (*Affected, error)
 > func (s *SqlY) UpdateManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error)
 ```go
@@ -150,7 +150,7 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 	}
 ```
 
-- 删除一条数据 
+- 删除操作
 > func (s *SqlY) Delete(query string, args ...interface{}) (*Affected, error)
 
 > func (s *SqlY) DeleteCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
@@ -342,7 +342,7 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 	_ = tx.Commit()
 ```
 
-- 事务回调(封装事务开启，关闭，回滚操作)
+- 事务封装(封装事务开启，关闭，回滚操作)
 > type TxFunc func(tx *Trans) (interface{}, error)
 
 > func (s *SqlY) Transaction(txFunc TxFunc) (interface{}, error)
@@ -390,9 +390,9 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 ```
     
     
-### 胶囊查询
-> 在执行事务操作的时候，我们需要显式得去初始化和传递事务句柄 tx,  常常不注意就会出现事务和非事务操作混用的问题，严重时还会出现查询线程池耗尽产生死锁（在事务内，申请非事务查询线程，在高并发的时候会尝试该死锁）   
-> 为了减少在开发过程中减少对事务和非事务的关注，sqly 采用闭包的方式封装一系列数据库操作，并采用 context 的方式在函数之间传递事务句柄，只需要在初始化闭包的时候确认是否开始事务。
+### 胶囊操作
+> 在执行事务操作的时候，我们需要显式得去初始化和传递事务句柄 tx,  常常不注意就会出现事务和非事务操作混用的问题，严重时还会出现查询连接池耗尽产生死锁（在事务内，申请非事务查询线程，在高并发的时候会尝试该死锁）   
+> 为了减少在开发过程中减少对事务和非事务的关注，sqly 采用回调函数的方式封装一系列数据库操作，并采用 context 的方式在函数之间传递事务句柄，只需要在初始化的时候确认是否开始事务。
 
 ### 胶囊操作相关方法
 - 初始化胶囊句柄
@@ -401,46 +401,32 @@ sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
 - 开启胶囊操作
 > type CapFunc func(ctx context.Context) (interface{}, error)     
 > func (c *Capsule) StartCapsule(ctx context.Context, isTrans bool, capFunc CapFunc) (interface{}, error)     
-> StartCapsule 开启胶囊，参数 ctx 上下文用于携带胶囊句柄，isTrans 是否开始事务 true 开启。 CapFunc 闭包函数，所有逻辑都在该闭包内实现
+> StartCapsule 开启胶囊，参数 ctx 上下文用于携带胶囊句柄，isTrans 是否开始事务 true 开启。 CapFunc 回调函数，所有逻辑都在该回调内实现
 
-> func (c *Capsule) Exec(query string, args ...interface{}) (*Affected, error)
-
-> func (c *Capsule) ExecCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
+- 通用执行
+> func (c *Capsule) Exec(ctx context.Context, query string, args ...interface{}) (*Affected, error)
 
 - 插入
-> func (c *Capsule) Insert(query string, args ...interface{}) (*Affected, error)
-
-> func (c *Capsule) InsertCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
+> func (c *Capsule) Insert(ctx context.Context, query string, args ...interface{}) (*Affected, error)
 
 - 插入多条
-> func (c *Capsule) InsertMany(query string, args [][]interface{}) (*Affected, error)
-
-> func (c *Capsule) InsertManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error)
+> func (c *Capsule) InsertMany(ctx context.Context, query string, args [][]interface{}) (*Affected, error)
 
 - 更新
-> func (c *Capsule) Update(query string, args ...interface{}) (*Affected, error)
-
-> func (c *Capsule) UpdateCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
+> func (c *Capsule) Update(ctx context.Context, query string, args ...interface{}) (*Affected, error)
 
 - 更新多条
-> func (c *Capsule) UpdateMany(query string, args [][]interface{}) (*Affected, error)
-> func (c *Capsule) UpdateManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error)
+> func (c *Capsule) UpdateMany(ctx context.Context, query string, args [][]interface{}) (*Affected, error)
 
 - 删除
-> func (c *Capsule) Delete(query string, args ...interface{}) (*Affected, error)
+> func (c *Capsule) Delete(ctx context.Context, query string, args ...interface{}) (*Affected, error)
 
-> func (c *Capsule) DeleteCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error)
-
-- 查询单条
-> func (c *Capsule) Get(dest interface{}, query string, args ...interface{}) error 
-
-> func (c *Capsule) GetCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+- 查询单条数据
+> func (c *Capsule) Get(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 参数 dest 必须为实例化的 struct 对象指针
 
 - 查询
-> func (c *Capsule) Query(dest interface{}, query string, args ...interface{}) error
-
-> func (c *Capsule) QueryCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+> func (c *Capsule) Query(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 参数 dest 必须为实例化的 struct 对象(或对象指针)数组的指针
 
 #### tips: 以上 sql 操作会根据开启胶囊时是否开启事务（isTrans) 设置来自动选择采用事务查询，还是非事务查询。
@@ -456,7 +442,7 @@ func TestCapsule_trans2(t *testing.T) {
 	ctx := context.TODO()  // 胶囊查询必须携带 context 参数
     // isTrans=true 开始事务查询
 	ret, err := capsule.StartCapsule(ctx, true, func(ctx context.Context) (interface{}, error) {
-        // 在闭包内执行相关数据库操作
+        // 在回调函数内执行相关数据库操作
 		var accs []*Account
 		query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` " +
 			"FROM `account`"
@@ -502,7 +488,7 @@ func TestCapsule_raw(t *testing.T) {
 	ctx := context.TODO()  // 胶囊查询必须携带 context 参数
     // isTrans=false 不开启事务
 	ret, err := capsule.StartCapsule(ctx, false, func(ctx context.Context) (interface{}, error) {
-        // 在闭包内执行相关数据库操作
+        // 在回调函数内执行相关数据库操作
 		var accs []*Account
 		query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` " +
 			"FROM `account`"

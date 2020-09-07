@@ -688,5 +688,25 @@ func TestSqly_EmptyArray2(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Sprintln(aff)
+}
 
+func TestSqlY_Json(t *testing.T) {
+	acc := Account{
+		ID:         1,
+		Nickname:   "nickname",
+		Avatar:     NullString{String: "", Valid: false},
+		Email:      "123@gmail.com",
+		Mobile:     "",
+		Role:       NullInt32{Int32: 1, Valid: true},
+		Password:   "",
+		IsValid:    NullBool{Bool: true, Valid: true},
+		CreateTime: time.Now(),
+		AddTime:    NullTime{Time: time.Now(), Valid: true},
+		Birthday:   NullTime{},
+	}
+	b, err := json.Marshal(acc)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(string(b))
 }
