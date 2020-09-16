@@ -277,3 +277,40 @@ func TestCapsule_raw2(t *testing.T) {
 	}
 	fmt.Sprintln(ret)
 }
+
+func TestCapsule_raw3(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	capsule := NewCapsule(db)
+	ctx := context.TODO()
+	var accs []*Account
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` " +
+		"FROM `account`"
+	err = capsule.Query(ctx, &accs, query)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(accs) < 2 {
+		t.Error(err)
+	}
+	query = "UPDATE `account` SET `nickname`=? WHERE `id`=?"
+	_, err = capsule.Update(ctx, query, "nick_test5", accs[0].ID)
+	if err != nil {
+		t.Error(err)
+	}
+	query = "UPDATE `account` SET `avatar`=? WHERE `id`=?"
+	aff, err := capsule.Update(ctx, query, "test5.png", accs[1].ID)
+	if err != nil {
+		t.Error(err)
+	}
+	query = "INSERT INTO `account` (`nickname`, `mobile`, `email`, `role`) " +
+		"VALUES (?, ?, ?, ?);"
+	aff, err = capsule.Insert(ctx, query, "nick_test5", "18712311239", "testx5@foxmail.com", 1)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Sprintln(aff)
+
+}

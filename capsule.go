@@ -2,6 +2,7 @@ package sqly
 
 import "context"
 
+// Capsule 胶囊对象
 type Capsule struct {
 	sqlY *SqlY
 }
@@ -22,14 +23,18 @@ type capsule struct {
 }
 
 // GetCapsule 获取连接胶囊
-func getCapsule(ctx context.Context) (*capsule, error) {
-	c := ctx.Value("_sqly_capsule")
-	if c == nil {
-		return nil, ErrCapsule
+func (c *Capsule) getCapsule(ctx context.Context) (*capsule, error) {
+	ci := ctx.Value("_sqly_capsule")
+	if ci == nil {
+		return &capsule{conn: c.sqlY}, nil
 	}
-	cs, ok := c.(*capsule)
+	cs, ok := ci.(*capsule)
 	if !ok {
-		return nil, ErrCapsule
+		return &capsule{
+			tx:      nil,
+			conn:    c.sqlY,
+			isTrans: false,
+		}, nil
 	}
 	if cs.isTrans {
 		if cs.tx == nil {
@@ -61,7 +66,7 @@ func (c *Capsule) StartCapsule(ctx context.Context, isTrans bool, capFunc CapFun
 
 // Query query
 func (c *Capsule) Query(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
-	cs, err := getCapsule(ctx)
+	cs, err := c.getCapsule(ctx)
 	if err != nil {
 		return err
 	}
@@ -73,7 +78,7 @@ func (c *Capsule) Query(ctx context.Context, dest interface{}, query string, arg
 
 // Get query one
 func (c *Capsule) Get(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
-	cs, err := getCapsule(ctx)
+	cs, err := c.getCapsule(ctx)
 	if err != nil {
 		return err
 	}
@@ -85,7 +90,7 @@ func (c *Capsule) Get(ctx context.Context, dest interface{}, query string, args 
 
 // Insert insert
 func (c *Capsule) Insert(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
-	cs, err := getCapsule(ctx)
+	cs, err := c.getCapsule(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +103,7 @@ func (c *Capsule) Insert(ctx context.Context, query string, args ...interface{})
 
 // InsertMany insert many
 func (c *Capsule) InsertMany(ctx context.Context, query string, args [][]interface{}) (*Affected, error) {
-	cs, err := getCapsule(ctx)
+	cs, err := c.getCapsule(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +116,7 @@ func (c *Capsule) InsertMany(ctx context.Context, query string, args [][]interfa
 
 // Update update
 func (c *Capsule) Update(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
-	cs, err := getCapsule(ctx)
+	cs, err := c.getCapsule(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +129,7 @@ func (c *Capsule) Update(ctx context.Context, query string, args ...interface{})
 
 // UpdateMany update many
 func (c *Capsule) UpdateMany(ctx context.Context, query string, args [][]interface{}) (*Affected, error) {
-	cs, err := getCapsule(ctx)
+	cs, err := c.getCapsule(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +142,7 @@ func (c *Capsule) UpdateMany(ctx context.Context, query string, args [][]interfa
 
 // Delete delete
 func (c *Capsule) Delete(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
-	cs, err := getCapsule(ctx)
+	cs, err := c.getCapsule(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +155,7 @@ func (c *Capsule) Delete(ctx context.Context, query string, args ...interface{})
 
 // Exec exec
 func (c *Capsule) Exec(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
-	cs, err := getCapsule(ctx)
+	cs, err := c.getCapsule(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +168,7 @@ func (c *Capsule) Exec(ctx context.Context, query string, args ...interface{}) (
 
 // ExecMany exec multi queries
 func (c *Capsule) ExecMany(ctx context.Context, queries []string) error {
-	cs, err := getCapsule(ctx)
+	cs, err := c.getCapsule(ctx)
 	if err != nil {
 		return err
 	}
