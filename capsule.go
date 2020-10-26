@@ -178,3 +178,8 @@ func (c *Capsule) ExecMany(ctx context.Context, queries []string) error {
 		return cs.conn.ExecManyCtx(ctx, queries)
 	}
 }
+
+// Close close connection
+func (c *Capsule) Close() error {
+	return c.sqlY.Close()
+}
