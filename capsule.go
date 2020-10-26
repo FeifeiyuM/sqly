@@ -183,3 +183,12 @@ func (c *Capsule) ExecMany(ctx context.Context, queries []string) error {
 func (c *Capsule) Close() error {
 	return c.sqlY.Close()
 }
+
+// IsTrans is enable transaction
+func (c *Capsule) IsTrans(ctx context.Context) (bool, error) {
+	cs, err := c.getCapsule(ctx)
+	if err != nil {
+		return false, err
+	}
+	return cs.isTrans, nil
+}

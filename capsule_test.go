@@ -312,5 +312,58 @@ func TestCapsule_raw3(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Sprintln(aff)
+}
 
+func TestCapsule_Close(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	capsule := NewCapsule(db)
+	err = capsule.Close()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestCapsule_IsTrans(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	capsule := NewCapsule(db)
+	ctx := context.TODO()
+	isTrans, err := capsule.IsTrans(ctx)
+	if err != nil {
+		t.Error(err)
+	}
+	if isTrans {
+		t.Error("is not trans")
+	}
+	_, err = capsule.StartCapsule(ctx, false, func(ctx context.Context) (interface{}, error) {
+		isTrans, err := capsule.IsTrans(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if isTrans {
+			return nil, errors.New("is not trans")
+		}
+		return nil, nil
+	})
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = capsule.StartCapsule(ctx, true, func(ctx context.Context) (interface{}, error) {
+		isTrans, err := capsule.IsTrans(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !isTrans {
+			return nil, errors.New("is trans")
+		}
+		return nil, nil
+	})
+	if err != nil {
+		t.Error(err)
+	}
 }
