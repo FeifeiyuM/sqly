@@ -270,6 +270,14 @@ func TestCapsule_raw2(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		var vals = [][]interface{}{
+			{"testq1", "18712342345", "testq1@foxmail.com", 1},
+			{"testq2", "18712342346", "testq2@foxmail.com", 1},
+		}
+		aff, err = capsule.InsertMany(ctx, query, vals)
+		if err != nil {
+			t.Error(err)
+		}
 		return aff, nil
 	})
 	if err != nil {

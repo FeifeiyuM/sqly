@@ -110,7 +110,7 @@ func (c *Capsule) InsertMany(ctx context.Context, query string, args [][]interfa
 	if cs.isTrans {
 		return cs.tx.InsertManyCtx(ctx, query, args)
 	} else {
-		return cs.conn.InsertCtx(ctx, query, args)
+		return cs.conn.InsertManyCtx(ctx, query, args)
 	}
 }
 
