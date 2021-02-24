@@ -710,3 +710,25 @@ func TestSqlY_Json(t *testing.T) {
 	}
 	fmt.Println(string(b))
 }
+
+func TestSqlY_Query2(t *testing.T) {
+	db, err := New(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	// user model
+	type Acc struct {
+		ID     int64  `sql:"id" json:"id"`
+		Email  string `sql:"email" json:"email"`
+		Mobile string `sql:"mobile" json:"mobile"`
+		Ext    map[string]interface{}
+	}
+	query := "SELECT * FROM `account`;"
+	var accs []*Acc
+	err = db.Query(&accs, query)
+	if err != nil {
+		t.Error(err)
+	}
+	accStr, _ := json.Marshal(accs)
+	fmt.Printf("rows %s", accStr)
+}

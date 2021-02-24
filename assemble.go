@@ -57,16 +57,28 @@ func isScanAble(field reflect.StructField) bool {
 	return scanAble(field.Type)
 }
 
+func isExportAble(field reflect.StructField) bool {
+	if field.Name == "" {
+		return false
+	}
+	if field.Name[0] < 'A' || field.Name[0] > 'Z' {
+		return false
+	}
+	return true
+}
+
 func fieldsIterate(kvMap map[string][]int, pos []int, field reflect.StructField) {
 	if !isScanAble(field) {
+		if !isExportAble(field) {
+			return
+		}
 		var numField int
 		var fieldType reflect.Type
 		if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
 			numField = field.Type.Elem().NumField()
 			fieldType = field.Type.Elem()
 		} else {
-			numField = field.Type.NumField()
-			fieldType = field.Type
+			return
 		}
 		for i := 0; i < numField; i++ {
 			_pos := append(pos, i)
