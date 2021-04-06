@@ -46,9 +46,9 @@ func argToStr(delim string, item interface{}) (string, error) {
 	case float64:
 		return strconv.FormatFloat(v, 'f', -1, 64), nil
 	case string:
-		return strconv.Quote(v), nil
+		return SingleQuote(v), nil
 	case time.Time:
-		return strconv.Quote(v.Format("2006-01-02 15:04:05.000000000")), nil
+		return SingleQuote(v.Format("2006-01-02 15:04:05.000000000")), nil
 	case NullInt64:
 		if v.Valid || v.Int64 != 0 {
 			return strconv.FormatInt(v.Int64, 10), nil
@@ -66,7 +66,7 @@ func argToStr(delim string, item interface{}) (string, error) {
 		return "NULL", nil
 	case NullString:
 		if v.Valid || v.String != "" {
-			return strconv.Quote(v.String), nil
+			return SingleQuote(v.String), nil
 		}
 		return "NULL", nil
 	case NullBool:
@@ -81,7 +81,7 @@ func argToStr(delim string, item interface{}) (string, error) {
 		if !v.Valid && v.Time.IsZero() {
 			return "NULL", nil
 		}
-		return strconv.Quote(v.Time.Format("2006-01-02 15:04:05.000000000")), nil
+		return SingleQuote(v.Time.Format("2006-01-02 15:04:05.000000000")), nil
 	case Boolean:
 		if v {
 			return "1", nil
@@ -193,7 +193,7 @@ func argToStr(delim string, item interface{}) (string, error) {
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
 			//buffer.WriteString("\"" + v[i] + "\"")
-			buffer.WriteString(strconv.Quote(v[i]))
+			buffer.WriteString(SingleQuote(v[i]))
 			if i != len(v)-1 {
 				buffer.WriteString(delim)
 			}
@@ -208,7 +208,7 @@ func argToStr(delim string, item interface{}) (string, error) {
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
 			t := v[i].Format("2006-01-02 15:04:05.000000000")
-			buffer.WriteString(strconv.Quote(t))
+			buffer.WriteString(SingleQuote(t))
 			if i != len(v)-1 {
 				buffer.WriteString(delim)
 			}

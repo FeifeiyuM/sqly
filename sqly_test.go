@@ -526,10 +526,10 @@ func TestSqlY_NullTime(t *testing.T) {
 	query := "INSERT INTO `account` (`nickname`, `mobile`, `email`, `add_time`, `birthday`) " +
 		"VALUES (?, ?, ?, ?, ?);"
 	var vals = [][]interface{}{
-		{"testq1", "18112362345", "testq1@foxmail.com", NullTime{}, NullTime{}},
-		{"testq2", "18112362346", "testq2@foxmail.com", NullTime{Time: time.Now(), Valid: true}, NullTime{Time: time.Now(), Valid: true}},
-		{"testq3", "18112362347", "testq1@foxmail.com", NullTime{}, NullTime{}},
-		{"testq4", "18112362348", "testq2@foxmail.com", NullTime{}, NullTime{Time: time.Now(), Valid: true}},
+		{"💩	'ok'", "18112362345", "testq1@foxmail.com", NullTime{}, NullTime{}},
+		{"testq2,\\2", "18112362346", "testq2@foxmail.com", NullTime{Time: time.Now(), Valid: true}, NullTime{Time: time.Now(), Valid: true}},
+		{"twt\nwafe", "18112362347", "testq1@foxmail.com", NullTime{}, NullTime{}},
+		{"t\\estq4", "18112362348", "testq2@foxmail.com", NullTime{}, NullTime{Time: time.Now(), Valid: true}},
 	}
 	aff, err := db.InsertMany(query, vals)
 	if err != nil {
