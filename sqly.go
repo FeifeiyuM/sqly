@@ -9,7 +9,8 @@ import (
 
 // SqlY struct
 type SqlY struct {
-	db *sql.DB
+	db         *sql.DB
+	driverName string
 }
 
 // Option sqly config option
@@ -42,13 +43,15 @@ func New(opt *Option) (*SqlY, error) {
 	db.SetConnMaxLifetime(opt.ConnMaxLifeTime)
 	db.SetMaxIdleConns(opt.MaxIdleConns)
 	db.SetMaxOpenConns(opt.MaxOpenConns)
-	return &SqlY{db: db}, nil
+	return &SqlY{db: db, driverName: opt.DriverName}, nil
 }
 
 // Affected to record lastId for insert, and affected rows for update, inserts, delete statement
 type Affected struct {
-	LastId       int64
-	RowsAffected int64
+	LastId          int64 `json:"last_id"`
+	LastIdErr       error `json:"last_id_Err"`
+	RowsAffected    int64 `json:"rows_affected"`
+	RowsAffectedErr error `json:"rows_affected_err"`
 }
 
 // exec one sql statement with context
@@ -57,24 +60,11 @@ func execOneDb(ctx context.Context, db *sql.DB, query string) (*Affected, error)
 	if err != nil {
 		return nil, err
 	}
-	// last row_id that affected
-	ld, errL := res.LastInsertId()
-	// rows that affected
-	rn, errR := res.RowsAffected()
 	aff := new(Affected)
-	if errL != nil && errR != nil {
-		return nil, errors.New("LastInsertId err:" + errL.Error() + " RowsAffected err:" + errR.Error())
-	}
-	if errL != nil {
-		aff.RowsAffected = rn
-		return aff, errL
-	}
-	if errR != nil {
-		aff.LastId = ld
-		return nil, errR
-	}
-	aff.RowsAffected = rn
-	aff.LastId = ld
+	// last row_id that affected
+	aff.LastId, aff.LastIdErr = res.LastInsertId()
+	// rows that affected
+	aff.RowsAffected, aff.RowsAffectedErr = res.RowsAffected()
 	return aff, nil
 }
 
