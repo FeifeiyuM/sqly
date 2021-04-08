@@ -78,10 +78,23 @@ func TestSqlY_Transaction3(t *testing.T) {
 			return nil, err
 		}
 		query = "UPDATE `account` SET `nickname`=? WHERE id=?"
-		aff, err = tx.UpdateCtx(ctx, query, "last_nick", aff.LastId)
+		lastId, err := aff.GetLastId()
 		if err != nil {
 			return nil, err
 		}
+		aff, err = tx.UpdateCtx(ctx, query, "last_nick", lastId)
+		if err != nil {
+			return nil, err
+		}
+		rows, err := aff.GetRowsAffected()
+		if err != nil {
+			return nil, err
+		}
+		lastId, err = aff.GetLastId()
+		if err != nil {
+			return nil, err
+		}
+		t.Logf("lastId: %d, rows affected: %d", lastId, rows)
 		return aff, nil
 	})
 

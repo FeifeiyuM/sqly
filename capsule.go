@@ -179,6 +179,20 @@ func (c *Capsule) ExecMany(ctx context.Context, queries []string) error {
 	}
 }
 
+// PgExec exec for postgresql
+// if you need the lastInsertId
+func (c *Capsule) PgExec(ctx context.Context, idField, query string, args ...interface{}) (*Affected, error) {
+	cs, err := c.getCapsule(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if cs.isTrans {
+		return cs.tx.PgExecCtx(ctx, idField, query, args...)
+	} else {
+		return cs.conn.PgExecCtx(ctx, idField, query, args...)
+	}
+}
+
 // Close close connection
 func (c *Capsule) Close() error {
 	return c.sqlY.Close()

@@ -215,7 +215,8 @@ func argToStr(delim string, item interface{}) (string, error) {
 		}
 		buffer.WriteString(")")
 		return buffer.String(), nil
-
+	case []byte:
+		return SingleQuote(string(v)), nil
 	default:
 		return "", ErrArgType
 	}

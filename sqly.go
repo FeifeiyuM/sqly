@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -46,25 +47,17 @@ func New(opt *Option) (*SqlY, error) {
 	return &SqlY{db: db, driverName: opt.DriverName}, nil
 }
 
-// Affected to record lastId for insert, and affected rows for update, inserts, delete statement
-type Affected struct {
-	LastId          int64 `json:"last_id"`
-	LastIdErr       error `json:"last_id_Err"`
-	RowsAffected    int64 `json:"rows_affected"`
-	RowsAffectedErr error `json:"rows_affected_err"`
-}
-
 // exec one sql statement with context
-func execOneDb(ctx context.Context, db *sql.DB, query string) (*Affected, error) {
-	res, err := db.ExecContext(ctx, query)
+func (s *SqlY) execOneDb(ctx context.Context, query string) (*Affected, error) {
+	res, err := s.db.ExecContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	aff := new(Affected)
 	// last row_id that affected
-	aff.LastId, aff.LastIdErr = res.LastInsertId()
-	// rows that affected
-	aff.RowsAffected, aff.RowsAffectedErr = res.RowsAffected()
+	aff := &Affected{
+		result:     res,
+		driverName: s.driverName,
+	}
 	return aff, nil
 }
 
@@ -138,7 +131,7 @@ func (s *SqlY) Insert(query string, args ...interface{}) (*Affected, error) {
 	if err != nil {
 		return nil, err
 	}
-	return execOneDb(context.Background(), s.db, q)
+	return s.execOneDb(context.Background(), q)
 }
 
 // InsertMany insert many values to database
@@ -147,7 +140,7 @@ func (s *SqlY) InsertMany(query string, args [][]interface{}) (*Affected, error)
 	if err != nil {
 		return nil, err
 	}
-	return execOneDb(context.Background(), s.db, q)
+	return s.execOneDb(context.Background(), q)
 }
 
 // Update update value to database
@@ -156,7 +149,7 @@ func (s *SqlY) Update(query string, args ...interface{}) (*Affected, error) {
 	if err != nil {
 		return nil, err
 	}
-	return execOneDb(context.Background(), s.db, q)
+	return s.execOneDb(context.Background(), q)
 }
 
 // UpdateMany update many
@@ -169,7 +162,7 @@ func (s *SqlY) UpdateMany(query string, args [][]interface{}) (*Affected, error)
 		}
 		q += t + ";"
 	}
-	return execOneDb(context.Background(), s.db, q)
+	return s.execOneDb(context.Background(), q)
 }
 
 // Delete delete item from database
@@ -178,7 +171,7 @@ func (s *SqlY) Delete(query string, args ...interface{}) (*Affected, error) {
 	if err != nil {
 		return nil, err
 	}
-	return execOneDb(context.Background(), s.db, q)
+	return s.execOneDb(context.Background(), q)
 }
 
 // Exec general sql statement execute
@@ -187,7 +180,7 @@ func (s *SqlY) Exec(query string, args ...interface{}) (*Affected, error) {
 	if err != nil {
 		return nil, err
 	}
-	return execOneDb(context.Background(), s.db, q)
+	return s.execOneDb(context.Background(), q)
 }
 
 // ExecMany execute multi sql statement
@@ -235,7 +228,7 @@ func (s *SqlY) InsertCtx(ctx context.Context, query string, args ...interface{})
 	if err != nil {
 		return nil, err
 	}
-	return execOneDb(ctx, s.db, q)
+	return s.execOneDb(ctx, q)
 }
 
 // InsertManyCtx insert many with context
@@ -244,7 +237,7 @@ func (s *SqlY) InsertManyCtx(ctx context.Context, query string, args [][]interfa
 	if err != nil {
 		return nil, err
 	}
-	return execOneDb(ctx, s.db, q)
+	return s.execOneDb(ctx, q)
 }
 
 // UpdateCtx update with context
@@ -253,7 +246,7 @@ func (s *SqlY) UpdateCtx(ctx context.Context, query string, args ...interface{})
 	if err != nil {
 		return nil, err
 	}
-	return execOneDb(ctx, s.db, q)
+	return s.execOneDb(ctx, q)
 }
 
 // UpdateManyCtx update many
@@ -266,7 +259,7 @@ func (s *SqlY) UpdateManyCtx(ctx context.Context, query string, args [][]interfa
 		}
 		q += t + ";"
 	}
-	return execOneDb(ctx, s.db, q)
+	return s.execOneDb(ctx, q)
 }
 
 // DeleteCtx delete with context
@@ -275,7 +268,7 @@ func (s *SqlY) DeleteCtx(ctx context.Context, query string, args ...interface{})
 	if err != nil {
 		return nil, err
 	}
-	return execOneDb(ctx, s.db, q)
+	return s.execOneDb(ctx, q)
 }
 
 // ExecCtx general sql statement execute with context
@@ -284,7 +277,7 @@ func (s *SqlY) ExecCtx(ctx context.Context, query string, args ...interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	return execOneDb(ctx, s.db, q)
+	return s.execOneDb(ctx, q)
 }
 
 // ExecManyCtx execute multi sql statement with context
@@ -306,7 +299,7 @@ func (s *SqlY) Transaction(txFunc TxFunc) (interface{}, error) {
 		_ = tx.Rollback()
 	}()
 
-	trans := Trans{tx}
+	trans := Trans{tx: tx, driverName: s.driverName}
 	// run callback
 	result, errR := txFunc(&trans)
 	if errR != nil {
@@ -324,5 +317,33 @@ func (s *SqlY) NewTrans() (*Trans, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Trans{tx: tx}, nil
+	return &Trans{tx: tx, driverName: s.driverName}, nil
+}
+
+// PgExec execute  statement for postgresql
+func (s *SqlY) PgExec(idField, query string, args ...interface{}) (*Affected, error) {
+	return s.PgExecCtx(context.Background(), idField, query, args...)
+}
+
+// PgExecCtx execute  statement for postgresql with context
+// use this function when you want the LastInsertId
+func (s *SqlY) PgExecCtx(ctx context.Context, idField, query string, args ...interface{}) (*Affected, error) {
+	if s.driverName != "postgres" {
+		return nil, ErrNotSupportForThisDriver
+	}
+	q, err := queryFormat(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	q = fmt.Sprintf("%s RETURNING %s", q, idField)
+	var id int64
+	err = s.db.QueryRowContext(ctx, q).Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+	return &Affected{
+		lastId:       id,
+		rowsAffected: -1,
+		driverName:   s.driverName,
+	}, nil
 }

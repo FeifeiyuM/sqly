@@ -29,4 +29,7 @@ var (
 	ErrCapsule = errors.New("query capsule is not available")
 
 	ErrEmptyArrayInStatement = errors.New("has empty array in query arguments")
+
+	// ErrNotSupportForThisDriver driver not support
+	ErrNotSupportForThisDriver = errors.New("not support for this driver")
 )

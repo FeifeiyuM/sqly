@@ -1,0 +1,175 @@
+package sqly
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"testing"
+	"time"
+
+	_ "github.com/lib/pq"
+)
+
+var opt = &Option{}
+
+type Account struct {
+	ID         int64       `sql:"id" json:"id"`
+	Nickname   string      `sql:"nickname" json:"nickname"`
+	Avatar     NullString  `sql:"avatar" json:"avatar"`
+	Email      string      `sql:"email" json:"email"`
+	Mobile     string      `sql:"mobile" json:"mobile"`
+	Role       NullInt32   `sql:"role" json:"role"`
+	Password   string      `sql:"password" json:"password"`
+	IsValid    NullBool    `sql:"is_valid" json:"is_valid"`
+	Stature    NullFloat64 `sql:"stature" json:"stature"`
+	CreateTime time.Time   `sql:"create_time" json:"create_time"`
+	AddTime    NullTime    `sql:"add_time" json:"add_time"`
+	Birthday   NullTime    `sql:"birthday" json:"birthday"`
+}
+
+type AlipayAgentSign struct {
+	Id          int64     `json:"id" sql:"id"`
+	ApplyNo     string    `json:"apply_no" sql:"apply_no"`
+	ContactInfo []byte    `json:"contact_info" sql:"contact_info"`
+	SignInfo    []byte    `json:"sign_info" sql:"sign_info"`
+	CreateTime  time.Time `json:"create_time" sql:"create_time"`
+	UpdateTime  time.Time `json:"update_time" sql:"update_time"`
+}
+
+// pg sql test
+var dsn = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable connect_timeout=20 TimeZone=Asia/Shanghai",
+	"", "", "", "", "")
+var pgOpt = &Option{
+	Dsn:        dsn,
+	DriverName: "postgres",
+}
+
+type AlipayAgent struct {
+	Id         int64     `json:"id" sql:"id"`
+	AppId      string    `json:"app_id" sql:"app_id"`
+	AppKey     string    `json:"app_key" sql:"app_key"`
+	PlatKey    string    `json:"plat_key" sql:"plat_key"`
+	CreateTime time.Time `json:"create_time" sql:"create_time"`
+	UpdateTime time.Time `json:"update_time" sql:"update_time"`
+}
+
+func TestSqlY_PGQuery(t *testing.T) {
+	db, err := New(pgOpt)
+	if err != nil {
+		panic(err)
+	}
+	var agents []*AlipayAgent
+	query := "SELECT id, app_id, app_key, plat_key, create_time, update_time FROM alipay_agent LIMIT 10"
+	err = db.Query(&agents, query)
+	if err != nil {
+		fmt.Printf("error %v", err)
+		return
+	}
+	agentB, _ := json.Marshal(agents)
+	fmt.Println(agentB)
+}
+
+func TestSqlY_PG_Update(t *testing.T) {
+	db, err := New(pgOpt)
+	if err != nil {
+		panic(err)
+	}
+	var signs []*AlipayAgentSign
+	query := "SELECT id, apply_no, contact_info, sign_info, create_time FROM alipay_agent_sign WHERE brand_id = ?"
+	err = db.Query(&signs, query, "33")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids := make([]int64, len(signs))
+	for idx, s := range signs {
+		ids[idx] = s.Id
+	}
+	query = "UPDATE alipay_agent_sign SET update_time=? WHERE id IN ?"
+	ctx := context.TODO()
+	now := time.Now()
+	aff, err := db.UpdateCtx(ctx, query, now, ids)
+	if err != nil {
+		t.Fatal(err)
+	}
+	affRows, err := aff.GetRowsAffected()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("rows: %d", affRows)
+}
+
+func TestSqlY_Pg_Insert(t *testing.T) {
+	db, err := New(pgOpt)
+	if err != nil {
+		panic(err)
+	}
+	query := "INSERT INTO alipay_agent_sign (apply_no, brand_id, alipay_account, contact_info, batch_no, sign_info, sign_type, app_id, create_time, update_time) VALUES (?,?,?,?,?,?,?,?,?,?)"
+	con := map[string]interface{}{
+		"name":   "微信",
+		"email":  "weixin@qq.com",
+		"mobile": "1234567",
+	}
+	conB, _ := json.Marshal(con)
+	now := time.Now()
+	aff, err := db.PgExec("id", query, "123452345", "55", "12345612345", conB, "1234563456", conB, "test", "1234563456", now, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lastId, _ := aff.GetLastId()
+	rows, err := aff.GetRowsAffected()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("lastId: %d; rows: %d", lastId, rows)
+}
+
+func TestTrans_PgExecCtx(t *testing.T) {
+	db, err := New(pgOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.Transaction(func(tx *Trans) (interface{}, error) {
+		var signs []*AlipayAgentSign
+		query := "SELECT id, apply_no, contact_info, sign_info, create_time FROM alipay_agent_sign WHERE brand_id = ?"
+		err = tx.Query(&signs, query, "55")
+		if err != nil {
+			return nil, err
+		}
+		t.Logf("before insert: %d", len(signs))
+		query2 := "INSERT INTO alipay_agent_sign (apply_no, brand_id, alipay_account, contact_info, batch_no, sign_info, sign_type, app_id, create_time, update_time) VALUES (?,?,?,?,?,?,?,?,?,?)"
+		con := map[string]interface{}{
+			"name":   "微信",
+			"email":  "weixin@qq.com",
+			"mobile": "1234567",
+		}
+		conB, _ := json.Marshal(con)
+		now := time.Now()
+		aff, err := tx.PgExec("id", query2, "1234523455", "55", "123456123455", conB, "12345634565", conB, "test", "12345634565", now, now)
+		if err != nil {
+			return nil, err
+		}
+		lastId, _ := aff.GetLastId()
+		t.Logf("lastid: %d", lastId)
+		aff, err = tx.Insert(query2, "1234523456", "55", "123456123456", conB, "12345634566", conB, "test6", "12345634566", now, now)
+		if err != nil {
+			return nil, err
+		}
+		rows, _ := aff.GetRowsAffected()
+		t.Logf("rows affected: %d", rows)
+		ctx := context.TODO()
+		var signs2 []*AlipayAgentSign
+		err = tx.QueryCtx(ctx, &signs2, query, "55")
+		if err != nil {
+			return nil, err
+		}
+		t.Logf("after insert: %d", len(signs2))
+		aff, err = tx.Insert(query2, "1234523455", "55", "123456123455", conB, "1234563455", conB, "test7", "12345634567", now, now)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err == nil {
+		t.Error("expect rollback")
+	}
+}
