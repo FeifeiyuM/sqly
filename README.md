@@ -1,6 +1,6 @@
 # sqly
 
-sqly 是基于 golang s数据库操作的标准包 database/sql 的扩展。
+sqly 是基于 golang 数据库操作的标准包 database/sql 的扩展。
 
 [![Build Status](https://action-badges.now.sh/FeifeiyuM/sqly)](https://github.com/FeifeiyuM/sqly/actions?query=workflow%3AGo)
 [![Go Report](https://goreportcard.com/badge/github.com/FeifeiyuM/sqly)](https://goreportcard.com/report/github.com/FeifeiyuM/sqly)
