@@ -14,7 +14,7 @@ func TestSqlY_Transaction(t *testing.T) {
 	res, err := db.Transaction(func(tx *Trans) (i interface{}, e error) {
 		ctx := context.TODO()
 		acc := new(Account)
-		query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` " +
+		query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `tags` " +
 			"FROM `account` WHERE `mobile`=?;"
 		err := tx.GetCtx(ctx, acc, query, "18812311232")
 		if err != nil {
@@ -41,7 +41,7 @@ func TestSqlY_Transaction2(t *testing.T) {
 	res, err := db.Transaction(func(tx *Trans) (i interface{}, e error) {
 		ctx := context.TODO()
 		acc := new(Account)
-		query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` " +
+		query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `tags` " +
 			"FROM `account` WHERE `mobile`=?;"
 		err := tx.GetCtx(ctx, acc, query, "18812311232")
 		if err != nil {
@@ -67,11 +67,12 @@ func TestSqlY_Transaction3(t *testing.T) {
 	}
 	res, err := db.Transaction(func(tx *Trans) (i interface{}, e error) {
 		ctx := context.TODO()
-		query := "INSERT INTO `account` (`nickname`, `mobile`, `email`, `role`) " +
-			"VALUES (?, ?, ?, ?);"
+		query := "INSERT INTO `account` (`nickname`, `mobile`, `email`, `role`, `tags`) " +
+			"VALUES (?, ?, ?, ?, ?);"
+		tags := []string{"tag1", "tag2"}
 		var vals = [][]interface{}{
-			{"testt1", "18112342355", "testq1@foxmail.com", 1},
-			{"testt2", "18112342356", "testq2@foxmail.com", 1},
+			{"testt1", "18112342355", "testq1@foxmail.com", 1, nil},
+			{"testt2", "18112342356", "testq2@foxmail.com", 1, Array(tags)},
 		}
 		aff, err := tx.InsertManyCtx(ctx, query, vals)
 		if err != nil {
@@ -114,7 +115,7 @@ func TestSqlY_Transaction4(t *testing.T) {
 		var queries []string
 		var mobiles = []string{"18112342355", "18112342356"}
 		for _, m := range mobiles {
-			item, err := QueryFmt("DELETE FROM `account` WHERE `mobile`=?;", m)
+			item, err := QueryFmtMysql("DELETE FROM `account` WHERE `mobile`=?;", m)
 			if err != nil {
 				return nil, err
 			}

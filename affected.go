@@ -9,7 +9,7 @@ type Affected struct {
 	result       sql.Result
 	lastId       int64
 	rowsAffected int64
-	driverName   string
+	driver       dbDriver
 }
 
 // GetLastId get lasted modified row id
@@ -17,7 +17,7 @@ func (a *Affected) GetLastId() (int64, error) {
 	if a.lastId != 0 {
 		return a.lastId, nil
 	}
-	if a.driverName == "postgres" {
+	if a.driver == driverPostgresql {
 		return 0, ErrNotSupportForThisDriver
 	}
 	var err error

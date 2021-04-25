@@ -1,0 +1,115 @@
+package sqly
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"testing"
+	"time"
+
+	_ "github.com/lib/pq"
+)
+
+var dsn = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable connect_timeout=20 TimeZone=Asia/Shanghai",
+	"10.2.3.9", "5432", "bilinadmin_rw", "T-SYibrtCnUWs8wFX4", "bilinadmin")
+
+var opt = &Option{
+	Dsn:        dsn,
+	DriverName: "postgres",
+}
+
+var db *SqlY
+
+func init() {
+	var err error
+	db, err = New(opt)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// user model
+type Account struct {
+	ID         int64       `sql:"id" json:"id"`
+	Nickname   string      `sql:"nickname" json:"nickname"`
+	Avatar     NullString  `sql:"avatar" json:"avatar"`
+	Email      string      `sql:"email" json:"email"`
+	Mobile     string      `sql:"mobile" json:"mobile"`
+	Role       NullInt32   `sql:"role" json:"role"`
+	Password   string      `sql:"password" json:"password"`
+	IsValid    NullBool    `sql:"is_valid" json:"is_valid"`
+	Stature    NullFloat64 `sql:"stature" json:"stature"`
+	CreateTime time.Time   `sql:"create_time" json:"create_time"`
+	AddTime    NullTime    `sql:"add_time" json:"add_time"`
+	Birthday   NullTime    `sql:"birthday" json:"birthday"`
+}
+
+type Permission struct {
+	Id        int64      `json:"id" sql:"id"`
+	PerId     int64      `json:"per_id" sql:"per_id"`
+	Name      string     `json:"name" sql:"name"`
+	Router    string     `json:"router" sql:"router"`
+	SubPerIds Int64Array `json:"sub_per_ids" sql:"sub_per_ids"`
+	IsDefault bool       `json:"is_default" sql:"is_default"`
+	DeletedAt int64      `json:"deleted_at" sql:"deleted_at"`
+}
+
+func TestSqlY_Insert_pg(t *testing.T) {
+	subIds := []int64{12, 13, 15, 9003}
+	query := "INSERT INTO permission (per_id, name, router, sub_per_ids, is_default) VALUES (?,?,?,?,?)"
+	aff, err := db.PgExec("id", query, 1, "test", "test", Array(subIds), true)
+	if err != nil {
+		t.Error(err)
+	}
+	lId, _ := aff.GetLastId()
+	t.Log(lId)
+}
+
+func TestSqlY_InsertManyCtx_pg(t *testing.T) {
+	query := "INSERT INTO permission (per_id, name, router, sub_per_ids, is_default) VALUES (?,?,?,?,?)"
+	ctx := context.TODO()
+	subIds := []int64{12, 13, 15, 900}
+	data := [][]interface{}{
+		{
+			2, "test2", "test2", Array(subIds), true,
+		},
+		{
+			3, "test3", "test3", nil, false,
+		},
+	}
+	_, err := db.InsertManyCtx(ctx, query, data)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func printArrInt(d []int64) {
+	fmt.Printf("data %v \n", d)
+}
+
+func TestSqlY_QueryCtx(t *testing.T) {
+	query := "SELECT * FROM permission LIMIT 10"
+	var pers []*Permission
+	err := db.QueryCtx(context.TODO(), &pers, query)
+	if err != nil {
+		t.Error(err)
+	}
+	for _, p := range pers {
+		perIds := p.SubPerIds
+		printArrInt(perIds)
+	}
+
+	resB, _ := json.Marshal(pers)
+	t.Log(string(resB))
+}
+
+func TestSqlY_GetCtx(t *testing.T) {
+	query := "SELECT * FROM permission WHERE sub_per_ids @>?"
+	var pers []*Permission
+	err := db.QueryCtx(context.TODO(), &pers, query, Array([]int64{15, 9003}))
+	if err != nil {
+		t.Error(err)
+	}
+	resB, _ := json.Marshal(pers)
+	t.Log(string(resB))
+}

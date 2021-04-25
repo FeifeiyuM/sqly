@@ -8,10 +8,20 @@ import (
 	"time"
 )
 
+type dbDriver int8
+
+const (
+	driverMysql      dbDriver = 1
+	driverPostgresql dbDriver = 2
+	driverOthers     dbDriver = 99
+)
+
+var argFmtFunc argFormat
+
 // SqlY struct
 type SqlY struct {
-	db         *sql.DB
-	driverName string
+	db     *sql.DB
+	driver dbDriver
 }
 
 // Option sqly config option
@@ -44,7 +54,20 @@ func New(opt *Option) (*SqlY, error) {
 	db.SetConnMaxLifetime(opt.ConnMaxLifeTime)
 	db.SetMaxIdleConns(opt.MaxIdleConns)
 	db.SetMaxOpenConns(opt.MaxOpenConns)
-	return &SqlY{db: db, driverName: opt.DriverName}, nil
+
+	r := &SqlY{db: db}
+	switch opt.DriverName {
+	case "mysql":
+		r.driver = driverMysql
+		argFmtFunc = mysqlArgFormat
+	case "postgres":
+		r.driver = driverPostgresql
+		argFmtFunc = pgArgFormat
+	default:
+		r.driver = driverOthers
+		argFmtFunc = mysqlArgFormat
+	}
+	return r, nil
 }
 
 // exec one sql statement with context
@@ -55,8 +78,8 @@ func (s *SqlY) execOneDb(ctx context.Context, query string) (*Affected, error) {
 	}
 	// last row_id that affected
 	aff := &Affected{
-		result:     res,
-		driverName: s.driverName,
+		result: res,
+		driver: s.driver,
 	}
 	return aff, nil
 }
@@ -94,7 +117,7 @@ func (s *SqlY) Close() error {
 // Query query the database working with results
 func (s *SqlY) Query(dest interface{}, query string, args ...interface{}) error {
 	// query db
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		if errors.Is(err, ErrEmptyArrayInStatement) {
 			return nil
@@ -111,7 +134,7 @@ func (s *SqlY) Query(dest interface{}, query string, args ...interface{}) error 
 // Get query the database working with one result
 func (s *SqlY) Get(dest interface{}, query string, args ...interface{}) error {
 	// query db
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		if errors.Is(err, ErrEmptyArrayInStatement) {
 			return nil
@@ -127,7 +150,7 @@ func (s *SqlY) Get(dest interface{}, query string, args ...interface{}) error {
 
 // Insert insert into the database
 func (s *SqlY) Insert(query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +159,7 @@ func (s *SqlY) Insert(query string, args ...interface{}) (*Affected, error) {
 
 // InsertMany insert many values to database
 func (s *SqlY) InsertMany(query string, args [][]interface{}) (*Affected, error) {
-	q, err := multiRowsFmt(query, args)
+	q, err := multiRowsFmt(query, argFmtFunc, args)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +168,7 @@ func (s *SqlY) InsertMany(query string, args [][]interface{}) (*Affected, error)
 
 // Update update value to database
 func (s *SqlY) Update(query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +179,7 @@ func (s *SqlY) Update(query string, args ...interface{}) (*Affected, error) {
 func (s *SqlY) UpdateMany(query string, args [][]interface{}) (*Affected, error) {
 	var q string
 	for _, arg := range args {
-		t, err := queryFormat(query, arg...)
+		t, err := statementFormat(query, argFmtFunc, arg...)
 		if err != nil {
 			return nil, err
 		}
@@ -167,7 +190,7 @@ func (s *SqlY) UpdateMany(query string, args [][]interface{}) (*Affected, error)
 
 // Delete delete item from database
 func (s *SqlY) Delete(query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +199,7 @@ func (s *SqlY) Delete(query string, args ...interface{}) (*Affected, error) {
 
 // Exec general sql statement execute
 func (s *SqlY) Exec(query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +214,7 @@ func (s *SqlY) ExecMany(queries []string) error {
 // QueryCtx query the database working with results
 func (s *SqlY) QueryCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
 	// query db
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		if errors.Is(err, ErrEmptyArrayInStatement) {
 			return nil
@@ -208,7 +231,7 @@ func (s *SqlY) QueryCtx(ctx context.Context, dest interface{}, query string, arg
 // GetCtx query the database working with one result
 func (s *SqlY) GetCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
 	// query db
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		if errors.Is(err, ErrEmptyArrayInStatement) {
 			return nil
@@ -224,7 +247,7 @@ func (s *SqlY) GetCtx(ctx context.Context, dest interface{}, query string, args 
 
 // InsertCtx insert with context
 func (s *SqlY) InsertCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +256,7 @@ func (s *SqlY) InsertCtx(ctx context.Context, query string, args ...interface{})
 
 // InsertManyCtx insert many with context
 func (s *SqlY) InsertManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error) {
-	q, err := multiRowsFmt(query, args)
+	q, err := multiRowsFmt(query, argFmtFunc, args)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +265,7 @@ func (s *SqlY) InsertManyCtx(ctx context.Context, query string, args [][]interfa
 
 // UpdateCtx update with context
 func (s *SqlY) UpdateCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +276,7 @@ func (s *SqlY) UpdateCtx(ctx context.Context, query string, args ...interface{})
 func (s *SqlY) UpdateManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error) {
 	var q string
 	for _, arg := range args {
-		t, err := queryFormat(query, arg...)
+		t, err := statementFormat(query, argFmtFunc, arg...)
 		if err != nil {
 			return nil, err
 		}
@@ -264,7 +287,7 @@ func (s *SqlY) UpdateManyCtx(ctx context.Context, query string, args [][]interfa
 
 // DeleteCtx delete with context
 func (s *SqlY) DeleteCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +296,7 @@ func (s *SqlY) DeleteCtx(ctx context.Context, query string, args ...interface{})
 
 // ExecCtx general sql statement execute with context
 func (s *SqlY) ExecCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +322,7 @@ func (s *SqlY) Transaction(txFunc TxFunc) (interface{}, error) {
 		_ = tx.Rollback()
 	}()
 
-	trans := Trans{tx: tx, driverName: s.driverName}
+	trans := Trans{tx: tx, driver: s.driver}
 	// run callback
 	result, errR := txFunc(&trans)
 	if errR != nil {
@@ -317,7 +340,7 @@ func (s *SqlY) NewTrans() (*Trans, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Trans{tx: tx, driverName: s.driverName}, nil
+	return &Trans{tx: tx, driver: s.driver}, nil
 }
 
 // PgExec execute  statement for postgresql
@@ -328,10 +351,10 @@ func (s *SqlY) PgExec(idField, query string, args ...interface{}) (*Affected, er
 // PgExecCtx execute  statement for postgresql with context
 // use this function when you want the LastInsertId
 func (s *SqlY) PgExecCtx(ctx context.Context, idField, query string, args ...interface{}) (*Affected, error) {
-	if s.driverName != "postgres" {
+	if s.driver != driverPostgresql {
 		return nil, ErrNotSupportForThisDriver
 	}
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -344,6 +367,6 @@ func (s *SqlY) PgExecCtx(ctx context.Context, idField, query string, args ...int
 	return &Affected{
 		lastId:       id,
 		rowsAffected: -1,
-		driverName:   s.driverName,
+		driver:       s.driver,
 	}, nil
 }

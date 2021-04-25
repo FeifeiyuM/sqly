@@ -10,8 +10,8 @@ import (
 
 // Trans sql struct for transaction
 type Trans struct {
-	tx         *sql.Tx
-	driverName string
+	tx     *sql.Tx
+	driver dbDriver
 }
 
 // exec one sql statement with context
@@ -21,8 +21,8 @@ func (t *Trans) execOneTx(ctx context.Context, query string) (*Affected, error) 
 		return nil, err
 	}
 	aff := &Affected{
-		result:     res,
-		driverName: t.driverName,
+		result: res,
+		driver: t.driver,
 	}
 	return aff, nil
 }
@@ -50,7 +50,7 @@ func (t *Trans) Commit() error {
 
 // Query query results
 func (t *Trans) Query(dest interface{}, query string, args ...interface{}) error {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		if errors.Is(err, ErrEmptyArrayInStatement) {
 			return nil
@@ -67,7 +67,7 @@ func (t *Trans) Query(dest interface{}, query string, args ...interface{}) error
 
 // Get query one row
 func (t *Trans) Get(dest interface{}, query string, args ...interface{}) error {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		if errors.Is(err, ErrEmptyArrayInStatement) {
 			return nil
@@ -84,7 +84,7 @@ func (t *Trans) Get(dest interface{}, query string, args ...interface{}) error {
 
 // Insert insert
 func (t *Trans) Insert(query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (t *Trans) Insert(query string, args ...interface{}) (*Affected, error) {
 
 // InsertMany insert many rows
 func (t *Trans) InsertMany(query string, args [][]interface{}) (*Affected, error) {
-	q, err := multiRowsFmt(query, args)
+	q, err := multiRowsFmt(query, argFmtFunc, args)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (t *Trans) InsertMany(query string, args [][]interface{}) (*Affected, error
 
 // Update update
 func (t *Trans) Update(query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (t *Trans) Update(query string, args ...interface{}) (*Affected, error) {
 func (t *Trans) UpdateMany(query string, args [][]interface{}) (*Affected, error) {
 	var qs []string
 	for _, arg := range args {
-		t, err := queryFormat(query, arg...)
+		t, err := statementFormat(query, argFmtFunc, arg...)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +125,7 @@ func (t *Trans) UpdateMany(query string, args [][]interface{}) (*Affected, error
 
 // Delete delete
 func (t *Trans) Delete(query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (t *Trans) Delete(query string, args ...interface{}) (*Affected, error) {
 
 // Exec general sql statement execute
 func (t *Trans) Exec(query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func (t *Trans) ExecMany(queries []string) error {
 
 // QueryCtx query results
 func (t *Trans) QueryCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		if errors.Is(err, ErrEmptyArrayInStatement) {
 			return nil
@@ -165,7 +165,7 @@ func (t *Trans) QueryCtx(ctx context.Context, dest interface{}, query string, ar
 
 // GetCtx query one row
 func (t *Trans) GetCtx(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		if errors.Is(err, ErrEmptyArrayInStatement) {
 			return nil
@@ -182,7 +182,7 @@ func (t *Trans) GetCtx(ctx context.Context, dest interface{}, query string, args
 
 // InsertCtx insert
 func (t *Trans) InsertCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +191,7 @@ func (t *Trans) InsertCtx(ctx context.Context, query string, args ...interface{}
 
 // InsertManyCtx insert many rows
 func (t *Trans) InsertManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error) {
-	q, err := multiRowsFmt(query, args)
+	q, err := multiRowsFmt(query, argFmtFunc, args)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (t *Trans) InsertManyCtx(ctx context.Context, query string, args [][]interf
 
 // UpdateCtx update
 func (t *Trans) UpdateCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (t *Trans) UpdateCtx(ctx context.Context, query string, args ...interface{}
 func (t *Trans) UpdateManyCtx(ctx context.Context, query string, args [][]interface{}) (*Affected, error) {
 	var q string
 	for _, arg := range args {
-		tmp, err := queryFormat(query, arg...)
+		tmp, err := statementFormat(query, argFmtFunc, arg...)
 		if err != nil {
 			return nil, err
 		}
@@ -222,7 +222,7 @@ func (t *Trans) UpdateManyCtx(ctx context.Context, query string, args [][]interf
 
 // DeleteCtx delete
 func (t *Trans) DeleteCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func (t *Trans) DeleteCtx(ctx context.Context, query string, args ...interface{}
 
 // ExecCtx general sql statement execute
 func (t *Trans) ExecCtx(ctx context.Context, query string, args ...interface{}) (*Affected, error) {
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -250,10 +250,10 @@ func (t *Trans) PgExec(idField, query string, args ...interface{}) (*Affected, e
 
 // PgExecCtx execute  statement for postgresql with context
 func (t *Trans) PgExecCtx(ctx context.Context, idField, query string, args ...interface{}) (*Affected, error) {
-	if t.driverName != "postgres" {
+	if t.driver != driverPostgresql {
 		return nil, ErrNotSupportForThisDriver
 	}
-	q, err := queryFormat(query, args...)
+	q, err := statementFormat(query, argFmtFunc, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -266,6 +266,6 @@ func (t *Trans) PgExecCtx(ctx context.Context, idField, query string, args ...in
 	return &Affected{
 		lastId:       id,
 		rowsAffected: -1,
-		driverName:   t.driverName,
+		driver:       t.driver,
 	}, nil
 }

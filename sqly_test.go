@@ -15,7 +15,7 @@ import (
 )
 
 var opt = &Option{
-	Dsn:             "root:root@tcp(127.0.0.1:3306)/test_db?multiStatements=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Local",
+	Dsn:             "test:mysql123@tcp(127.0.0.1:3306)/test_db?multiStatements=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Local",
 	DriverName:      "mysql",
 	MaxIdleConns:    0,
 	MaxOpenConns:    0,
@@ -31,6 +31,7 @@ type Account struct {
 	Mobile     string      `sql:"mobile" json:"mobile"`
 	Role       NullInt32   `sql:"role" json:"role"`
 	Password   string      `sql:"password" json:"password"`
+	Tags       StringArray `json:"tags" sql:"tags"`
 	IsValid    NullBool    `sql:"is_valid" json:"is_valid"`
 	Stature    NullFloat64 `sql:"stature" json:"stature"`
 	CreateTime time.Time   `sql:"create_time" json:"create_time"`
@@ -65,6 +66,7 @@ func TestSqlY_Exec(t *testing.T) {
 		"`email` varchar(320) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'email'," +
 		"`password` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'password'," +
 		"`role` tinyint(4) DEFAULT '0' COMMENT 'role'," +
+		"`tags` varchar(320) COMMENT 'tags'," +
 		"`is_valid` tinyint(4) DEFAULT NULL COMMENT 'is_valid'," +
 		"`stature` float(5,2) DEFAULT NULL COMMENT 'stature'," +
 		"`create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP," +
@@ -85,9 +87,10 @@ func TestSqlY_Insert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	query := "INSERT INTO `account` (`nickname`, `mobile`, `email`, `role`) " +
-		"VALUES (?, ?, ?, ?);"
-	aff, err := db.Insert(query, "nick_test3", "18812311235", "test@foxmail.com", 1)
+	query := "INSERT INTO `account` (`nickname`, `mobile`, `email`, `role`, `tags`) " +
+		"VALUES (?, ?, ?, ?, ?);"
+	tags := []string{"tag1", "tag2", "tag3"}
+	aff, err := db.Insert(query, "nick_test3", "18812311235", "test@foxmail.com", 1, Array(tags))
 	if err != nil {
 		t.Error(err)
 	}
@@ -127,11 +130,12 @@ func TestSqlY_InsertMany(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	query := "INSERT INTO `account` (`nickname`, `mobile`, `email`, `role`) " +
-		"VALUES (?, ?, ?, ?);"
+	query := "INSERT INTO `account` (`nickname`, `mobile`, `email`, `role`, `tags`) " +
+		"VALUES (?, ?, ?, ?, ?);"
+	tags := []string{"tag1", "tag2", "tag3"}
 	var vals = [][]interface{}{
-		{"testq1", "18112342345", "testq1@foxmail.com", 1},
-		{"testq2", "18112342346", "testq2@foxmail.com", 1},
+		{"testq1", "18112342345", "testq1@foxmail.com", 1, Array(tags)},
+		{"testq2", "18112342346", "testq2@foxmail.com", 1, nil},
 	}
 	aff, err := db.InsertMany(query, vals)
 	if err != nil {
@@ -147,7 +151,7 @@ func TestSqlY_QueryOne(t *testing.T) {
 	}
 
 	acc := new(Account)
-	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` FROM `account` " +
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `tags` FROM `account` " +
 		"WHERE `id`=?;"
 	err = db.Get(acc, query, 1)
 	if err != nil {
@@ -161,7 +165,7 @@ func TestSqlY_Query(t *testing.T) {
 		t.Error(err)
 	}
 	var accs []*Account
-	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time` FROM `account`;"
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time`, `tags` FROM `account`;"
 
 	err = db.Query(&accs, query, nil)
 	if err != nil {
@@ -221,7 +225,7 @@ func TestSqlY_QueryCtx(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role` " +
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `tags` " +
 		"FROM `account` WHERE `avatar` IS ?;"
 	ctx := context.TODO()
 	var acc []Account
@@ -238,7 +242,7 @@ func TestSqlY_GetCtx(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time` " +
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time`, `tags` " +
 		"FROM `account` WHERE `mobile`=?;"
 	ctx := context.TODO()
 	acc := new(Account)
@@ -260,7 +264,7 @@ func TestSqlY_GetCtx_Empty(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time` " +
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time` , `tags`" +
 		"FROM `account` WHERE `mobile`=?;"
 	ctx := context.TODO()
 	acc := new(Account)
@@ -275,7 +279,7 @@ func TestSqlY_GetCtx_Multi(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time` " +
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time`, `tags` " +
 		"FROM `account`;"
 	ctx := context.TODO()
 	acc := new(Account)
@@ -292,9 +296,9 @@ func TestSqlY_ExecManyCtx(t *testing.T) {
 	}
 	ctx := context.TODO()
 	var queries []string
-	query, _ := QueryFmt("UPDATE `account` SET `nickname`=? WHERE `mobile`=?;", "nick_many", "18112342345")
+	query, _ := QueryFmtMysql("UPDATE `account` SET `nickname`=? WHERE `mobile`=?;", "nick_many", "18112342345")
 	queries = append(queries, query)
-	query, _ = QueryFmt("DELETE FROM `account` WHERE `mobile`=?;", "18112342346")
+	query, _ = QueryFmtMysql("DELETE FROM `account` WHERE `mobile`=?;", "18112342346")
 	queries = append(queries, query)
 	err = db.ExecManyCtx(ctx, queries)
 	if err != nil {
@@ -321,7 +325,7 @@ func TestSqlY_NewTrans(t *testing.T) {
 	ctx := context.TODO()
 
 	acc := new(Account)
-	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time` " +
+	query := "SELECT `id`, `nickname`, `avatar`, `email`, `mobile`, `password`, `role`, `create_time`, `tags` " +
 		"FROM `account` WHERE `mobile`=?;"
 	err = ts.GetCtx(ctx, acc, query, "18812311235")
 	if err != nil {
