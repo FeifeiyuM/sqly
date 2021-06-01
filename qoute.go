@@ -1,6 +1,7 @@
 package sqly
 
 import (
+	"bytes"
 	"strconv"
 	"unicode/utf8"
 )
@@ -96,4 +97,12 @@ func appendEscapedRune(buf []byte, r rune, quote byte) []byte {
 // origin from strconv.Qoute
 func SingleQuote(s string) string {
 	return quoteWith(s, '\'')
+}
+
+// PgString pg 字符串格式化
+func PgString(s string) string {
+	var buff bytes.Buffer
+	buff.WriteString("E")
+	buff.WriteString(quoteWith(s, '\''))
+	return buff.String()
 }

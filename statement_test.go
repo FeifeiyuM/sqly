@@ -80,3 +80,13 @@ func TestQueryFmt_pg(t *testing.T) {
 	}
 	fmt.Println(res)
 }
+
+func TestQueryFmtPostgresql(t *testing.T) {
+	errMsg := "rpc error: code = InvalidArgument desc = 参数错误: error=Key: 'CommonOrderRequest.OrderNumber' Error:Field validation for 'OrderNumber' failed on the 'required' tag"
+	query := "UPDATE schedules SET err_msg=? WHERE id=?"
+	res, err := QueryFmtPostgresql(query, errMsg, 1)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(res)
+}
