@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func arrToStr(v driver.Value, err error) (string, error) {
+func arrToStrPg(v driver.Value, err error) (string, error) {
 	if err != nil {
 		return "", err
 	}
@@ -18,6 +18,16 @@ func arrToStr(v driver.Value, err error) (string, error) {
 		return "NULL", nil
 	}
 	return PgString(v.(string)), nil
+}
+
+func arrToStrMySql(v driver.Value, err error) (string, error) {
+	if err != nil {
+		return "", err
+	}
+	if v == nil {
+		return "NULL", nil
+	}
+	return SingleQuote(v.(string)), nil
 }
 
 type argFormat func(delim string, item interface{}) (string, error)
@@ -60,9 +70,9 @@ func mysqlArgFormat(delim string, item interface{}) (string, error) {
 	case float64:
 		return strconv.FormatFloat(v, 'f', -1, 64), nil
 	case string:
-		return PgString(v), nil
+		return SingleQuote(v), nil
 	case time.Time:
-		return PgString(v.Format("2006-01-02 15:04:05.000000000")), nil
+		return SingleQuote(v.Format("2006-01-02 15:04:05.000000000")), nil
 	case NullInt64:
 		if v.Valid || v.Int64 != 0 {
 			return strconv.FormatInt(v.Int64, 10), nil
@@ -80,7 +90,7 @@ func mysqlArgFormat(delim string, item interface{}) (string, error) {
 		return "NULL", nil
 	case NullString:
 		if v.Valid || v.String != "" {
-			return PgString(v.String), nil
+			return SingleQuote(v.String), nil
 		}
 		return "NULL", nil
 	case NullBool:
@@ -95,7 +105,7 @@ func mysqlArgFormat(delim string, item interface{}) (string, error) {
 		if !v.Valid && v.Time.IsZero() {
 			return "NULL", nil
 		}
-		return PgString(v.Time.Format("2006-01-02 15:04:05.000000000")), nil
+		return SingleQuote(v.Time.Format("2006-01-02 15:04:05.000000000")), nil
 	case Boolean:
 		if v {
 			return "1", nil
@@ -207,7 +217,7 @@ func mysqlArgFormat(delim string, item interface{}) (string, error) {
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
 			//buffer.WriteString("\"" + v[i] + "\"")
-			buffer.WriteString(PgString(v[i]))
+			buffer.WriteString(SingleQuote(v[i]))
 			if i != len(v)-1 {
 				buffer.WriteString(delim)
 			}
@@ -222,7 +232,7 @@ func mysqlArgFormat(delim string, item interface{}) (string, error) {
 		buffer.WriteString("(")
 		for i := 0; i < len(v); i++ {
 			t := v[i].Format("2006-01-02 15:04:05.000000000")
-			buffer.WriteString(PgString(t))
+			buffer.WriteString(SingleQuote(t))
 			if i != len(v)-1 {
 				buffer.WriteString(delim)
 			}
@@ -230,28 +240,28 @@ func mysqlArgFormat(delim string, item interface{}) (string, error) {
 		buffer.WriteString(")")
 		return buffer.String(), nil
 	case []byte:
-		return PgString(string(v)), nil
+		return SingleQuote(string(v)), nil
 	case BoolArray:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrMySql(b, err)
 	case ByteaArray:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrMySql(b, err)
 	case Float64Array:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrMySql(b, err)
 	case Float32Array:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrMySql(b, err)
 	case GenericArray:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrMySql(b, err)
 	case Int64Array:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrMySql(b, err)
 	case StringArray:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrMySql(b, err)
 	default:
 		return "", ErrArgType
 	}
@@ -468,25 +478,25 @@ func pgArgFormat(delim string, item interface{}) (string, error) {
 		return PgString(string(v)), nil
 	case BoolArray:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrPg(b, err)
 	case ByteaArray:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrPg(b, err)
 	case Float64Array:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrPg(b, err)
 	case Float32Array:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrPg(b, err)
 	case GenericArray:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrPg(b, err)
 	case Int64Array:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrPg(b, err)
 	case StringArray:
 		b, err := v.Value()
-		return arrToStr(b, err)
+		return arrToStrPg(b, err)
 	default:
 		return "", ErrArgType
 	}
